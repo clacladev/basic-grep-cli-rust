@@ -14,6 +14,10 @@ pub fn match_pattern(input_line: &str, pattern: &str) -> bool {
         return input_line.chars().any(|c| c.is_alphanumeric() || c == '_');
     }
 
+    if let Some(characters) = get_negative_character_group(pattern) {
+        return !input_line.chars().any(|c| characters.contains(&c));
+    }
+
     if let Some(characters) = get_positive_character_group(pattern) {
         return input_line.chars().any(|c| characters.contains(&c));
     }
@@ -26,6 +30,14 @@ fn get_positive_character_group(pattern: &str) -> Option<Vec<char>> {
         return None;
     }
     let characters = pattern.chars().skip(1).take(pattern.len() - 2).collect();
+    Some(characters)
+}
+
+fn get_negative_character_group(pattern: &str) -> Option<Vec<char>> {
+    if !pattern.starts_with("[^") || !pattern.ends_with(']') {
+        return None;
+    }
+    let characters = pattern.chars().skip(2).take(pattern.len() - 3).collect();
     Some(characters)
 }
 
@@ -74,5 +86,15 @@ mod tests {
         assert_eq!(match_pattern("hello world", "[cd]"), true);
         assert_eq!(match_pattern("hello world", "[abctyj]"), false);
         assert_eq!(match_pattern("hello world", "[abctyjh]"), true);
+    }
+
+    #[test]
+    fn test_match_pattern_negative_character_group() {
+        assert_eq!(match_pattern("hello world", "[^abc]"), true);
+        assert_eq!(match_pattern("hello world", "[^abcd]"), false);
+        assert_eq!(match_pattern("hello world", "[^etz]"), false);
+        assert_eq!(match_pattern("hello world", "[^cd]"), false);
+        assert_eq!(match_pattern("hello world", "[^abctyj]"), true);
+        assert_eq!(match_pattern("hello world", "[^abctyjh]"), false);
     }
 }
