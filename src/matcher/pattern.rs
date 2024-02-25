@@ -6,11 +6,20 @@ pub enum Pattern {
     PositiveGroup(String),
     NegativeGroup(String),
     StartOfString(String),
+    EndOfString(String),
 }
 
 pub fn parse_pattern(pattern: &str) -> Vec<Pattern> {
     let mut patterns = Vec::new();
     let mut chars = pattern.chars();
+
+    // End of string
+    if pattern.ends_with('$') {
+        chars.next_back();
+        let remaining = chars.collect::<String>();
+        patterns.push(Pattern::EndOfString(remaining));
+        return patterns;
+    }
 
     while let Some(char) = chars.next() {
         // Groups
@@ -30,7 +39,7 @@ pub fn parse_pattern(pattern: &str) -> Vec<Pattern> {
             continue;
         }
 
-        // Line anchor
+        // Start of string
         if char == '^' {
             let remaining = chars.clone().collect::<String>();
             patterns.push(Pattern::StartOfString(remaining));
@@ -126,6 +135,22 @@ mod tests {
         assert_eq!(
             parse_pattern("^hey"),
             vec![Pattern::StartOfString("hey".to_string())]
+        );
+    }
+
+    #[test]
+    fn test_parse_pattern_with_end_of_line() {
+        assert_eq!(
+            parse_pattern("h$"),
+            vec![Pattern::EndOfString("h".to_string())]
+        );
+        assert_eq!(
+            parse_pattern("abc$"),
+            vec![Pattern::EndOfString("abc".to_string())]
+        );
+        assert_eq!(
+            parse_pattern("hey$"),
+            vec![Pattern::EndOfString("hey".to_string())]
         );
     }
 

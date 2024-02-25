@@ -6,9 +6,22 @@ pub fn match_pattern(input_string: &str, pattern_string: &str) -> bool {
     let input_string_chars = input_string.chars().collect::<Vec<char>>();
     let patterns = parse_pattern(pattern_string);
 
-    // If the first pattern is start of string, we can check if the input string starts with it
-    if let Some(Pattern::StartOfString(start_string)) = patterns.first() {
-        return input_string.starts_with(start_string);
+    // If start of string patter exists, check if the input string starts with it
+    let start_string_pattern = patterns.iter().find_map(|p| match p {
+        Pattern::StartOfString(string) => Some(string),
+        _ => None,
+    });
+    if let Some(start_string_pattern) = start_string_pattern {
+        return input_string.starts_with(start_string_pattern);
+    }
+
+    // If end of string patter exists, check if the input string ends with it
+    let end_string_pattern = patterns.iter().find_map(|p| match p {
+        Pattern::EndOfString(string) => Some(string),
+        _ => None,
+    });
+    if let Some(end_string_pattern) = end_string_pattern {
+        return input_string.ends_with(end_string_pattern);
     }
 
     for char_index in 0..input_string_chars.len() {
@@ -35,9 +48,7 @@ fn is_matching(input_string: &str, patterns: &[Pattern]) -> bool {
             Pattern::Alphanumeric => char.is_alphanumeric() || char == '_',
             Pattern::PositiveGroup(group) => group.contains(char), // TODO: check all chars in input string
             Pattern::NegativeGroup(group) => !group.contains(char), // TODO: check all chars in input string
-            Pattern::StartOfString(_) => {
-                panic!("LineAnchor should be handled before calling is_matching")
-            }
+            Pattern::StartOfString(_) | Pattern::EndOfString(_) => continue,
         };
 
         if !is_match {
@@ -110,7 +121,7 @@ mod tests {
     }
 
     #[test]
-    fn test_match_pattern_start_of_stirng() {
+    fn test_match_pattern_start_of_string() {
         assert_eq!(match_pattern("hello world", "^abc"), false);
         assert_eq!(match_pattern("abcde", "^abc"), true);
         assert_eq!(match_pattern("hello world", "^hello"), true);
@@ -118,5 +129,12 @@ mod tests {
         assert_eq!(match_pattern("hello world", "^world"), false);
         assert_eq!(match_pattern("log", "^log"), true);
         assert_eq!(match_pattern("slog", "^log"), false);
+    }
+
+    #[test]
+    fn test_match_pattern_end_of_string() {
+        assert_eq!(match_pattern("log", "log$"), true);
+        assert_eq!(match_pattern("slog", "log$"), true);
+        assert_eq!(match_pattern("logs", "log$"), false);
     }
 }
