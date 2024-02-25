@@ -7,6 +7,7 @@ pub enum Pattern {
     NegativeGroup(String),
     StartOfString(String),
     EndOfString(String),
+    OneOrMore(char),
 }
 
 pub fn parse_pattern(pattern: &str) -> Vec<Pattern> {
@@ -55,6 +56,15 @@ pub fn parse_pattern(pattern: &str) -> Vec<Pattern> {
                 Some(char) => patterns.push(Pattern::Literal(char)),
                 None => panic!("Invalid escape sequence"),
             }
+            continue;
+        }
+
+        let next_char = chars.clone().next();
+
+        // One or more
+        if next_char == Some('+') {
+            patterns.push(Pattern::OneOrMore(char));
+            chars.next();
             continue;
         }
 
@@ -123,7 +133,7 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_pattern_with_start_of_line() {
+    fn test_parse_pattern_with_start_of_string() {
         assert_eq!(
             parse_pattern("^h"),
             vec![Pattern::StartOfString("h".to_string())]
@@ -139,7 +149,7 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_pattern_with_end_of_line() {
+    fn test_parse_pattern_with_end_of_string() {
         assert_eq!(
             parse_pattern("h$"),
             vec![Pattern::EndOfString("h".to_string())]
@@ -152,6 +162,12 @@ mod tests {
             parse_pattern("hey$"),
             vec![Pattern::EndOfString("hey".to_string())]
         );
+    }
+
+    #[test]
+    fn test_parse_pattern_with_one_or_more() {
+        assert_eq!(parse_pattern("h+"), vec![Pattern::OneOrMore('h')]);
+        assert_eq!(parse_pattern("A+"), vec![Pattern::OneOrMore('A')]);
     }
 
     #[test]
@@ -207,6 +223,22 @@ mod tests {
         assert_eq!(
             parse_pattern(r"^yolo"),
             vec![Pattern::StartOfString("yolo".to_string())]
+        );
+        assert_eq!(
+            parse_pattern("ab+c"),
+            vec![
+                Pattern::Literal('a'),
+                Pattern::OneOrMore('b'),
+                Pattern::Literal('c')
+            ]
+        );
+        assert_eq!(
+            parse_pattern("hey+"),
+            vec![
+                Pattern::Literal('h'),
+                Pattern::Literal('e'),
+                Pattern::OneOrMore('y')
+            ]
         );
     }
 }

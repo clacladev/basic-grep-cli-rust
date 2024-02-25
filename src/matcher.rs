@@ -19,8 +19,8 @@ pub fn match_pattern(input_string: &str, pattern_string: &str) -> bool {
 
     // Check if the input string contains the pattern, otherwise checks again at the next character
     for char_index in 0..input_string_chars.len() {
-        let remaining_input_string = &input_string_chars[char_index..].iter().collect::<String>();
-        if is_matching(remaining_input_string, &chars_patterns) {
+        let remaining_string = &input_string_chars[char_index..].iter().collect::<String>();
+        if is_matching(remaining_string, &chars_patterns) {
             return true;
         }
     }
@@ -44,6 +44,7 @@ fn is_matching(input_string: &str, patterns: &[Pattern]) -> bool {
             Pattern::NegativeGroup(group) => !group.contains(char), // TODO: check all chars in input string
             Pattern::StartOfString(string) => input_string.starts_with(string),
             Pattern::EndOfString(string) => input_string.ends_with(string),
+            Pattern::OneOrMore(c) => *c == char,
         };
 
         if !is_match {
