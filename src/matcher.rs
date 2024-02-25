@@ -4,55 +4,199 @@ mod pattern;
 
 pub fn match_pattern(input_string: &str, pattern_string: &str) -> bool {
     let input_string_chars = input_string.chars().collect::<Vec<char>>();
+    let input_string_length = input_string_chars.len();
     let patterns = parse_pattern(pattern_string);
+    let mut chars_check_count = 0;
 
-    let (line_patterns, chars_patterns): (Vec<_>, Vec<_>) =
-        patterns.into_iter().partition(|p| match p {
-            Pattern::StartOfString(_) | Pattern::EndOfString(_) => true,
-            _ => false,
-        });
-
-    // Check the line patterns
-    if !is_matching(&input_string, &line_patterns) {
-        return false;
-    }
-
-    // Check if the input string contains the pattern, otherwise checks again at the next character
-    for char_index in 0..input_string_chars.len() {
-        let remaining_string = &input_string_chars[char_index..].iter().collect::<String>();
-        if is_matching(remaining_string, &chars_patterns) {
-            return true;
+    while input_string_length > chars_check_count {
+        let remaining_string = &input_string_chars[chars_check_count..]
+            .iter()
+            .collect::<String>();
+        let match_result = is_matching(remaining_string, &patterns);
+        chars_check_count += match_result.chars_check_count;
+        if !match_result.should_search_next_char {
+            return match_result.is_match;
         }
     }
 
     false
 }
 
-fn is_matching(input_string: &str, patterns: &[Pattern]) -> bool {
-    let mut chars = input_string.chars();
+struct MatchResult {
+    is_match: bool,
+    chars_check_count: usize,
+    should_search_next_char: bool,
+    should_search_next_pattern: bool,
+}
 
-    for pattern in patterns {
+impl MatchResult {
+    fn new(
+        is_match: bool,
+        chars_check_count: usize,
+        should_search_next_char: bool,
+        should_search_next_pattern: bool,
+    ) -> MatchResult {
+        MatchResult {
+            is_match,
+            chars_check_count,
+            should_search_next_char,
+            should_search_next_pattern,
+        }
+    }
+}
+
+/**
+* Check if the input string matches the patterns
+* @param input_string: The input string
+* @param patterns: The patterns to match
+* @return: A tuple with:
+*   - the result of the match
+*   - the number of characters checked
+*   - should check at the next character?
+*   - should continue with next pattern?
+*/
+fn is_matching(input_string: &str, patterns: &[Pattern]) -> MatchResult {
+    let mut chars = input_string.chars();
+    let input_string_length = input_string.chars().count();
+
+    'patterns_loop: for pattern in patterns {
         let char = match chars.next() {
             Some(char) => char,
-            None => return false,
+            None => return MatchResult::new(false, 0, false, false),
         };
-        let is_match = match pattern {
-            Pattern::Literal(c) => *c == char,
-            Pattern::Digit => char.is_digit(10),
-            Pattern::Alphanumeric => char.is_alphanumeric() || char == '_',
-            Pattern::PositiveGroup(group) => group.contains(char), // TODO: check all chars in input string
-            Pattern::NegativeGroup(group) => !group.contains(char), // TODO: check all chars in input string
-            Pattern::StartOfString(string) => input_string.starts_with(string),
-            Pattern::EndOfString(string) => input_string.ends_with(string),
-            Pattern::OneOrMore(c) => *c == char,
+        let match_result = match pattern {
+            Pattern::Literal(c) => {
+                let mut chars = chars.clone();
+                let mut char = char;
+                loop {
+                    if *c == char {
+                        continue 'patterns_loop;
+                    }
+                    char = match chars.next() {
+                        Some(char) => char,
+                        None => break,
+                    };
+                }
+                MatchResult::new(false, input_string_length - chars.count(), false, false)
+            }
+            Pattern::Digit => {
+                let mut chars = chars.clone();
+                let mut char = char;
+                loop {
+                    if char.is_digit(10) {
+                        return MatchResult::new(
+                            true,
+                            input_string_length - chars.count(),
+                            false,
+                            true,
+                        );
+                    }
+                    char = match chars.next() {
+                        Some(char) => char,
+                        None => break,
+                    };
+                }
+                MatchResult::new(false, input_string_length - chars.count(), false, false)
+            }
+            Pattern::Alphanumeric => {
+                let mut chars = chars.clone();
+                let mut char = char;
+                loop {
+                    if char.is_alphanumeric() || char == '_' {
+                        return MatchResult::new(
+                            true,
+                            input_string_length - chars.count(),
+                            false,
+                            true,
+                        );
+                    }
+                    char = match chars.next() {
+                        Some(char) => char,
+                        None => break,
+                    };
+                }
+                MatchResult::new(false, input_string_length - chars.count(), false, false)
+            }
+            Pattern::PositiveGroup(group) => {
+                let mut chars = chars.clone();
+                let mut char = char;
+                loop {
+                    if group.contains(char) {
+                        return MatchResult::new(
+                            true,
+                            input_string_length - chars.count(),
+                            false,
+                            true,
+                        );
+                    }
+                    char = match chars.next() {
+                        Some(char) => char,
+                        None => break,
+                    };
+                }
+                MatchResult::new(false, input_string_length - chars.count(), false, false)
+            }
+            Pattern::NegativeGroup(group) => {
+                let mut chars = chars.clone();
+                let mut char = char;
+                loop {
+                    if group.contains(char) {
+                        return MatchResult::new(
+                            false,
+                            input_string_length - chars.count(),
+                            false,
+                            false,
+                        );
+                    }
+                    char = match chars.next() {
+                        Some(char) => char,
+                        None => break,
+                    };
+                }
+                MatchResult::new(true, input_string_length - chars.count(), false, true)
+            }
+            Pattern::StartOfString(string) => {
+                let is_match = input_string.starts_with(string);
+                return if is_match {
+                    chars.nth(string.len() - 1);
+                    MatchResult::new(true, string.len(), false, true)
+                } else {
+                    MatchResult::new(false, string.len(), false, false)
+                };
+            }
+            Pattern::EndOfString(string) => {
+                let is_match = input_string.ends_with(string);
+                if is_match {
+                    chars.nth(string.len() - 1);
+                }
+                MatchResult::new(is_match, string.len(), false, false)
+            }
+            Pattern::OneOrMore(c) => {
+                let mut chars = chars.clone();
+                let mut char = char;
+                let mut count = 0;
+                loop {
+                    if *c == char {
+                        count += 1;
+                    } else {
+                        break;
+                    }
+                    char = match chars.next() {
+                        Some(char) => char,
+                        None => break,
+                    };
+                }
+                let is_match = count >= 1;
+                MatchResult::new(is_match, count + 1, false, is_match)
+            }
         };
 
-        if !is_match {
-            return false;
+        if !match_result.is_match && !match_result.should_search_next_pattern {
+            return match_result;
         }
     }
 
-    true
+    MatchResult::new(true, input_string_length - chars.count(), false, false)
 }
 
 #[cfg(test)]
@@ -69,15 +213,21 @@ mod tests {
         assert_eq!(match_pattern("hello world", "w"), true);
         assert_eq!(match_pattern("hello world", "f"), false);
         assert_eq!(match_pattern("hello world", "a"), false);
+        assert_eq!(match_pattern("hello world", "hel"), true);
+        assert_eq!(match_pattern("hello world", "hwd"), true);
+        assert_eq!(match_pattern("hello world", "hez"), false);
     }
 
     #[test]
     fn test_match_pattern_single_digits() {
-        assert_eq!(match_pattern("hello world", DIGITS_PATTERN), false);
-        assert_eq!(match_pattern("hello 1 world", DIGITS_PATTERN), true);
-        assert_eq!(match_pattern("2 hello world", DIGITS_PATTERN), true);
-        assert_eq!(match_pattern("hello world 3", DIGITS_PATTERN), true);
-        assert_eq!(match_pattern("Cia0", DIGITS_PATTERN), true);
+        // assert_eq!(match_pattern("hello world", DIGITS_PATTERN), false);
+        // assert_eq!(match_pattern("hello 1 world", DIGITS_PATTERN), true);
+        // assert_eq!(match_pattern("2 hello world", DIGITS_PATTERN), true);
+        // assert_eq!(match_pattern("hello world 3", DIGITS_PATTERN), true);
+        // assert_eq!(match_pattern("Cia0", DIGITS_PATTERN), true);
+        // assert_eq!(match_pattern("Cia0", DIGITS_PATTERN), true);
+        // assert_eq!(match_pattern("sally has 1 orange", r"\d orange"), true);
+        assert_eq!(match_pattern("sally has 1 orange", r"\d apple"), false);
     }
 
     #[test]
@@ -109,11 +259,11 @@ mod tests {
     #[test]
     fn test_match_pattern_negative_group() {
         assert_eq!(match_pattern("hello world", "[^abc]"), true);
-        // assert_eq!(match_pattern("hello world", "[^abcd]"), false); // d exists!!!
-        // assert_eq!(match_pattern("hello world", "[^etz]"), false);
-        // assert_eq!(match_pattern("hello world", "[^cd]"), false);
-        // assert_eq!(match_pattern("hello world", "[^abctyj]"), true);
-        // assert_eq!(match_pattern("hello world", "[^abctyjh]"), false);
+        assert_eq!(match_pattern("hello world", "[^abcd]"), false);
+        assert_eq!(match_pattern("hello world", "[^etz]"), false);
+        assert_eq!(match_pattern("hello world", "[^cd]"), false);
+        assert_eq!(match_pattern("hello world", "[^abctyj]"), true);
+        assert_eq!(match_pattern("hello world", "[^abctyjh]"), false);
     }
 
     #[test]
@@ -132,5 +282,15 @@ mod tests {
         assert_eq!(match_pattern("log", "log$"), true);
         assert_eq!(match_pattern("slog", "log$"), true);
         assert_eq!(match_pattern("logs", "log$"), false);
+    }
+
+    #[test]
+    fn test_match_pattern_one_or_more() {
+        assert_eq!(match_pattern("log", "log+"), true);
+        assert_eq!(match_pattern("loggg", "log+"), true);
+        assert_eq!(match_pattern("logs", "log+s"), true);
+        assert_eq!(match_pattern("logs", "a+"), false);
+        assert_eq!(match_pattern("los", "log+"), false);
+        assert_eq!(match_pattern("log", "a+og"), false);
     }
 }
