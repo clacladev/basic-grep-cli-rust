@@ -6,27 +6,21 @@ pub fn match_pattern(input_string: &str, pattern_string: &str) -> bool {
     let input_string_chars = input_string.chars().collect::<Vec<char>>();
     let patterns = parse_pattern(pattern_string);
 
-    // If start of string patter exists, check if the input string starts with it
-    let start_string_pattern = patterns.iter().find_map(|p| match p {
-        Pattern::StartOfString(string) => Some(string),
-        _ => None,
-    });
-    if let Some(start_string_pattern) = start_string_pattern {
-        return input_string.starts_with(start_string_pattern);
+    let (line_patterns, chars_patterns): (Vec<_>, Vec<_>) =
+        patterns.into_iter().partition(|p| match p {
+            Pattern::StartOfString(_) | Pattern::EndOfString(_) => true,
+            _ => false,
+        });
+
+    // Check the line patterns
+    if !is_matching(&input_string, &line_patterns) {
+        return false;
     }
 
-    // If end of string patter exists, check if the input string ends with it
-    let end_string_pattern = patterns.iter().find_map(|p| match p {
-        Pattern::EndOfString(string) => Some(string),
-        _ => None,
-    });
-    if let Some(end_string_pattern) = end_string_pattern {
-        return input_string.ends_with(end_string_pattern);
-    }
-
+    // Check if the input string contains the pattern, otherwise checks again at the next character
     for char_index in 0..input_string_chars.len() {
         let remaining_input_string = &input_string_chars[char_index..].iter().collect::<String>();
-        if is_matching(remaining_input_string, &patterns) {
+        if is_matching(remaining_input_string, &chars_patterns) {
             return true;
         }
     }
@@ -48,7 +42,8 @@ fn is_matching(input_string: &str, patterns: &[Pattern]) -> bool {
             Pattern::Alphanumeric => char.is_alphanumeric() || char == '_',
             Pattern::PositiveGroup(group) => group.contains(char), // TODO: check all chars in input string
             Pattern::NegativeGroup(group) => !group.contains(char), // TODO: check all chars in input string
-            Pattern::StartOfString(_) | Pattern::EndOfString(_) => continue,
+            Pattern::StartOfString(string) => input_string.starts_with(string),
+            Pattern::EndOfString(string) => input_string.ends_with(string),
         };
 
         if !is_match {
