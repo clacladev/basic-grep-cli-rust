@@ -5,7 +5,7 @@ pub enum Pattern {
     Alphanumeric,
     PositiveGroup(String),
     NegativeGroup(String),
-    LineAnchor(String),
+    StartOfString(String),
 }
 
 pub fn parse_pattern(pattern: &str) -> Vec<Pattern> {
@@ -33,7 +33,7 @@ pub fn parse_pattern(pattern: &str) -> Vec<Pattern> {
         // Line anchor
         if char == '^' {
             let remaining = chars.clone().collect::<String>();
-            patterns.push(Pattern::LineAnchor(remaining));
+            patterns.push(Pattern::StartOfString(remaining));
             break;
         }
 
@@ -114,18 +114,18 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_pattern_with_line_anchor() {
+    fn test_parse_pattern_with_start_of_line() {
         assert_eq!(
             parse_pattern("^h"),
-            vec![Pattern::LineAnchor("h".to_string())]
+            vec![Pattern::StartOfString("h".to_string())]
         );
         assert_eq!(
             parse_pattern("^abc"),
-            vec![Pattern::LineAnchor("abc".to_string())]
+            vec![Pattern::StartOfString("abc".to_string())]
         );
         assert_eq!(
             parse_pattern("^hey"),
-            vec![Pattern::LineAnchor("hey".to_string())]
+            vec![Pattern::StartOfString("hey".to_string())]
         );
     }
 
@@ -181,7 +181,7 @@ mod tests {
         );
         assert_eq!(
             parse_pattern(r"^yolo"),
-            vec![Pattern::LineAnchor("yolo".to_string())]
+            vec![Pattern::StartOfString("yolo".to_string())]
         );
     }
 }

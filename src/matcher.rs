@@ -6,9 +6,9 @@ pub fn match_pattern(input_string: &str, pattern_string: &str) -> bool {
     let input_string_chars = input_string.chars().collect::<Vec<char>>();
     let patterns = parse_pattern(pattern_string);
 
-    // If the first pattern is line anchor, we can check if the input string starts with it
-    if let Some(Pattern::LineAnchor(remaining)) = patterns.first() {
-        return input_string.starts_with(remaining);
+    // If the first pattern is start of string, we can check if the input string starts with it
+    if let Some(Pattern::StartOfString(start_string)) = patterns.first() {
+        return input_string.starts_with(start_string);
     }
 
     for char_index in 0..input_string_chars.len() {
@@ -35,7 +35,7 @@ fn is_matching(input_string: &str, patterns: &[Pattern]) -> bool {
             Pattern::Alphanumeric => char.is_alphanumeric() || char == '_',
             Pattern::PositiveGroup(group) => group.contains(char), // TODO: check all chars in input string
             Pattern::NegativeGroup(group) => !group.contains(char), // TODO: check all chars in input string
-            Pattern::LineAnchor(_) => {
+            Pattern::StartOfString(_) => {
                 panic!("LineAnchor should be handled before calling is_matching")
             }
         };
@@ -110,7 +110,7 @@ mod tests {
     }
 
     #[test]
-    fn test_match_pattern_line_anchor() {
+    fn test_match_pattern_start_of_stirng() {
         assert_eq!(match_pattern("hello world", "^abc"), false);
         assert_eq!(match_pattern("abcde", "^abc"), true);
         assert_eq!(match_pattern("hello world", "^hello"), true);
