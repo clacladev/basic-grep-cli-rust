@@ -84,12 +84,7 @@ fn is_matching(input_string: &str, patterns: &[Pattern]) -> MatchResult {
                 let mut char = char;
                 loop {
                     if char.is_digit(10) {
-                        return MatchResult::new(
-                            true,
-                            input_string_length - chars.count(),
-                            false,
-                            true,
-                        );
+                        continue 'patterns_loop;
                     }
                     char = match chars.next() {
                         Some(char) => char,
@@ -103,12 +98,7 @@ fn is_matching(input_string: &str, patterns: &[Pattern]) -> MatchResult {
                 let mut char = char;
                 loop {
                     if char.is_alphanumeric() || char == '_' {
-                        return MatchResult::new(
-                            true,
-                            input_string_length - chars.count(),
-                            false,
-                            true,
-                        );
+                        continue 'patterns_loop;
                     }
                     char = match chars.next() {
                         Some(char) => char,
@@ -204,9 +194,6 @@ mod tests {
 
     use super::*;
 
-    const DIGITS_PATTERN: &str = r"\d";
-    const ALPHANUMERIC_PATTERN: &str = r"\w";
-
     #[test]
     fn test_match_pattern_single_letter() {
         assert_eq!(match_pattern("hello world", "h"), true);
@@ -216,34 +203,38 @@ mod tests {
         assert_eq!(match_pattern("hello world", "hel"), true);
         assert_eq!(match_pattern("hello world", "hwd"), true);
         assert_eq!(match_pattern("hello world", "hez"), false);
+        assert_eq!(match_pattern("123e1z2h3", "hez"), true);
     }
 
     #[test]
     fn test_match_pattern_single_digits() {
-        // assert_eq!(match_pattern("hello world", DIGITS_PATTERN), false);
-        // assert_eq!(match_pattern("hello 1 world", DIGITS_PATTERN), true);
-        // assert_eq!(match_pattern("2 hello world", DIGITS_PATTERN), true);
-        // assert_eq!(match_pattern("hello world 3", DIGITS_PATTERN), true);
-        // assert_eq!(match_pattern("Cia0", DIGITS_PATTERN), true);
-        // assert_eq!(match_pattern("Cia0", DIGITS_PATTERN), true);
-        // assert_eq!(match_pattern("sally has 1 orange", r"\d orange"), true);
+        assert_eq!(match_pattern("hello world", r"\d"), false);
+        assert_eq!(match_pattern("hello 1 world", r"\d"), true);
+        assert_eq!(match_pattern("2 hello world", r"\d"), true);
+        assert_eq!(match_pattern("hello world 3", r"\d"), true);
+        assert_eq!(match_pattern("Cia0", r"\d"), true);
+        assert_eq!(match_pattern("Cia0", r"\d"), true);
+        assert_eq!(match_pattern("sally has 1 orange", r"\d orange"), true);
         assert_eq!(match_pattern("sally has 1 orange", r"\d apple"), false);
+        assert_eq!(match_pattern("orange 2", r"orange \d"), true);
+        assert_eq!(match_pattern("orange 2", r"apple \d"), false);
     }
 
     #[test]
     fn test_match_pattern_alphanumeric() {
-        assert_eq!(match_pattern("hello", ALPHANUMERIC_PATTERN), true);
-        assert_eq!(match_pattern("2123", ALPHANUMERIC_PATTERN), true);
-        assert_eq!(match_pattern("___", ALPHANUMERIC_PATTERN), true);
-        assert_eq!(match_pattern("_he110_", ALPHANUMERIC_PATTERN), true);
-        assert_eq!(match_pattern("£$%a", ALPHANUMERIC_PATTERN), true);
-        assert_eq!(match_pattern("£$%A", ALPHANUMERIC_PATTERN), true);
-        assert_eq!(match_pattern("£$%6", ALPHANUMERIC_PATTERN), true);
-        assert_eq!(match_pattern("£$%_", ALPHANUMERIC_PATTERN), true);
-        assert_eq!(match_pattern("£$%", ALPHANUMERIC_PATTERN), false);
-        assert_eq!(match_pattern("---", ALPHANUMERIC_PATTERN), false);
-        assert_eq!(match_pattern("é", ALPHANUMERIC_PATTERN), true);
-        assert_eq!(match_pattern("ç", ALPHANUMERIC_PATTERN), true);
+        assert_eq!(match_pattern("hello", r"\w"), true);
+        assert_eq!(match_pattern("2123", r"\w"), true);
+        assert_eq!(match_pattern("___", r"\w"), true);
+        assert_eq!(match_pattern("_he110_", r"\w"), true);
+        assert_eq!(match_pattern("£$%a", r"\w"), true);
+        assert_eq!(match_pattern("£$%A", r"\w"), true);
+        assert_eq!(match_pattern("£$%6", r"\w"), true);
+        assert_eq!(match_pattern("£$%_", r"\w"), true);
+        assert_eq!(match_pattern("£$%", r"\w"), false);
+        assert_eq!(match_pattern("---", r"\w"), false);
+        assert_eq!(match_pattern("é", r"\w"), true);
+        assert_eq!(match_pattern("ç", r"\w"), true);
+        assert_eq!(match_pattern("#A#", r"\w\w"), true);
     }
 
     #[test]
