@@ -8,6 +8,7 @@ const ONE_OR_MORE_SYMBOL: char = '+';
 const GROUP_START_SYMBOL: char = '[';
 const GROUP_END_SYMBOL: char = ']';
 const NEGATIVE_GROUP_SYMBOL: char = '^';
+const WILDCARD_SYMBOL: char = '.';
 
 #[derive(Debug, PartialEq)]
 pub enum Pattern {
@@ -20,7 +21,7 @@ pub enum Pattern {
     EndOfString(String),
     ZeroOrOne(char),
     OneOrMore(char),
-    // Wildcard,
+    Wildcard,
 }
 
 pub fn parse_pattern(pattern: &str) -> Vec<Pattern> {
@@ -82,6 +83,12 @@ pub fn parse_pattern(pattern: &str) -> Vec<Pattern> {
         if let Some(&ONE_OR_MORE_SYMBOL) = chars.peek() {
             patterns.push(Pattern::OneOrMore(char));
             chars.next();
+            continue;
+        }
+
+        // Wildcard
+        if char == WILDCARD_SYMBOL {
+            patterns.push(Pattern::Wildcard);
             continue;
         }
 
@@ -194,6 +201,21 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_pattern_with_wildcard() {
+        assert_eq!(parse_pattern("."), vec![Pattern::Wildcard]);
+        assert_eq!(
+            parse_pattern("d.g.o"),
+            vec![
+                Pattern::Literal('d'),
+                Pattern::Wildcard,
+                Pattern::Literal('g'),
+                Pattern::Wildcard,
+                Pattern::Literal('o')
+            ]
+        );
+    }
+
+    #[test]
     fn test_parse_pattern_with_combinations_of_patterns() {
         assert_eq!(
             parse_pattern("[a][b]"),
@@ -276,6 +298,15 @@ mod tests {
             vec![
                 Pattern::Literal('h'),
                 Pattern::Literal('e'),
+                Pattern::OneOrMore('y')
+            ]
+        );
+        assert_eq!(
+            parse_pattern("h?e.y+"),
+            vec![
+                Pattern::ZeroOrOne('h'),
+                Pattern::Literal('e'),
+                Pattern::Wildcard,
                 Pattern::OneOrMore('y')
             ]
         );

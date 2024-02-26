@@ -22,6 +22,7 @@ fn is_matching(input_string: &str, patterns: &[Pattern]) -> bool {
             Pattern::EndOfString(string) => is_matching_end_of_string(string, input_string),
             Pattern::ZeroOrOne(c) => is_matching_zero_or_one(c, &mut chars),
             Pattern::OneOrMore(c) => is_matching_one_or_more(c, &mut chars),
+            Pattern::Wildcard => is_matching_wildcard(&mut chars),
         };
         if !is_match {
             return false;
@@ -106,6 +107,13 @@ fn is_matching_one_or_more(c: &char, chars: &mut Peekable<Chars>) -> bool {
         count += 1;
     }
     count >= 1
+}
+
+fn is_matching_wildcard(chars: &mut Peekable<Chars>) -> bool {
+    match chars.next() {
+        Some(_) => true,
+        None => false,
+    }
 }
 
 #[cfg(test)]
@@ -220,5 +228,14 @@ mod tests {
         assert_eq!(match_pattern("logs", "a+"), false);
         assert_eq!(match_pattern("los", "log+"), false);
         assert_eq!(match_pattern("log", "a+og"), false);
+    }
+
+    #[test]
+    fn test_match_pattern_wildcard() {
+        assert_eq!(match_pattern("log", "l.g"), true);
+        assert_eq!(match_pattern("loggg", "log.."), true);
+        assert_eq!(match_pattern("logs", "...."), true);
+        assert_eq!(match_pattern("lo", "..."), false);
+        assert_eq!(match_pattern("lo", "...."), false);
     }
 }
