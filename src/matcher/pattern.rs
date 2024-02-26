@@ -9,6 +9,9 @@ const GROUP_START_SYMBOL: char = '[';
 const GROUP_END_SYMBOL: char = ']';
 const NEGATIVE_GROUP_SYMBOL: char = '^';
 const WILDCARD_SYMBOL: char = '.';
+const ALTERNATION_START_SYMBOL: char = '(';
+const ALTERNATION_END_SYMBOL: char = ')';
+const ALTERNATION_SEPARATOR_SYMBOL: char = '|';
 
 #[derive(Debug, PartialEq)]
 pub enum Pattern {
@@ -22,6 +25,7 @@ pub enum Pattern {
     ZeroOrOne(char),
     OneOrMore(char),
     Wildcard,
+    Alternation(Vec<Vec<Self>>),
 }
 
 pub fn parse_pattern(pattern: &str) -> Vec<Pattern> {
@@ -69,6 +73,23 @@ pub fn parse_pattern(pattern: &str) -> Vec<Pattern> {
                 Some(c) => patterns.push(Pattern::Literal(c)),
                 None => panic!("Invalid escape sequence"),
             }
+            continue;
+        }
+
+        // Alternation group
+        if char == ALTERNATION_START_SYMBOL {
+            let mut alternation_string = String::new();
+            while let Some(char) = chars.next() {
+                if char == ALTERNATION_END_SYMBOL {
+                    break;
+                }
+                alternation_string.push(char);
+            }
+            let patterns_groups = alternation_string
+                .split(ALTERNATION_SEPARATOR_SYMBOL)
+                .map(parse_pattern)
+                .collect();
+            patterns.push(Pattern::Alternation(patterns_groups));
             continue;
         }
 
@@ -216,6 +237,22 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_pattern_with_alternation() {
+        assert_eq!(
+            parse_pattern("(a)"),
+            vec![Pattern::Alternation(vec![vec![Pattern::Literal('a')]])]
+        );
+        assert_eq!(
+            parse_pattern("(a|b|cc)"),
+            vec![Pattern::Alternation(vec![
+                vec![Pattern::Literal('a')],
+                vec![Pattern::Literal('b')],
+                vec![Pattern::Literal('c'), Pattern::Literal('c')]
+            ])]
+        );
+    }
+
+    #[test]
     fn test_parse_pattern_with_combinations_of_patterns() {
         assert_eq!(
             parse_pattern("[a][b]"),
@@ -309,6 +346,22 @@ mod tests {
                 Pattern::Wildcard,
                 Pattern::OneOrMore('y')
             ]
+        );
+        assert_eq!(
+            parse_pattern("(dog|.ss|f?i+)"),
+            vec![Pattern::Alternation(vec![
+                vec![
+                    Pattern::Literal('d'),
+                    Pattern::Literal('o'),
+                    Pattern::Literal('g')
+                ],
+                vec![
+                    Pattern::Wildcard,
+                    Pattern::Literal('s'),
+                    Pattern::Literal('s')
+                ],
+                vec![Pattern::ZeroOrOne('f'), Pattern::OneOrMore('i')]
+            ])]
         );
     }
 }

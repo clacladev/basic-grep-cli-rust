@@ -23,6 +23,7 @@ fn is_matching(input_string: &str, patterns: &[Pattern]) -> bool {
             Pattern::ZeroOrOne(c) => is_matching_zero_or_one(c, &mut chars),
             Pattern::OneOrMore(c) => is_matching_one_or_more(c, &mut chars),
             Pattern::Wildcard => is_matching_wildcard(&mut chars),
+            Pattern::Alternation(groups) => is_matching_alternation(groups, &mut chars),
         };
         if !is_match {
             return false;
@@ -114,6 +115,16 @@ fn is_matching_wildcard(chars: &mut Peekable<Chars>) -> bool {
         Some(_) => true,
         None => false,
     }
+}
+
+fn is_matching_alternation(groups: &Vec<Vec<Pattern>>, chars: &mut Peekable<Chars>) -> bool {
+    let remaining_string: String = chars.collect();
+    for group in groups {
+        if is_matching(&remaining_string, group) {
+            return true;
+        }
+    }
+    false
 }
 
 #[cfg(test)]
@@ -237,5 +248,15 @@ mod tests {
         assert_eq!(match_pattern("logs", "...."), true);
         assert_eq!(match_pattern("lo", "..."), false);
         assert_eq!(match_pattern("lo", "...."), false);
+    }
+
+    #[test]
+    fn test_match_pattern_alternation() {
+        assert_eq!(match_pattern("fish", "(dog|cat)"), false);
+        assert_eq!(match_pattern("dog", "(dog|cat)"), true);
+        assert_eq!(match_pattern("doggo", "(dog|cat)"), true);
+        assert_eq!(match_pattern("cat", "(dog|cat)"), true);
+        assert_eq!(match_pattern("fish", "(dog|cat|f..h)"), true);
+        assert_eq!(match_pattern("fish", "(dog|..s?\\w)"), true);
     }
 }
