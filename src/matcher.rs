@@ -1,6 +1,5 @@
-use std::{iter::Peekable, str::Chars};
-
 use self::pattern::{parse_pattern, Pattern};
+use std::{iter::Peekable, str::Chars};
 
 mod pattern;
 
@@ -13,10 +12,6 @@ fn is_matching(input_string: &str, patterns: &[Pattern]) -> bool {
     let mut chars = input_string.chars().peekable();
 
     for pattern in patterns {
-        if let None = chars.peek() {
-            return false;
-        }
-
         let is_match = match pattern {
             Pattern::Literal(c) => is_matching_literal(c, &mut chars),
             Pattern::Digit => is_matching_digit(&mut chars),
@@ -27,7 +22,6 @@ fn is_matching(input_string: &str, patterns: &[Pattern]) -> bool {
             Pattern::EndOfString(string) => is_matching_end_of_string(string, input_string),
             Pattern::OneOrMore(c) => is_matching_one_or_more(c, &mut chars),
         };
-
         if !is_match {
             return false;
         }
@@ -37,11 +31,7 @@ fn is_matching(input_string: &str, patterns: &[Pattern]) -> bool {
 }
 
 fn is_matching_literal(c: &char, chars: &mut Peekable<Chars>) -> bool {
-    loop {
-        let char = match chars.next() {
-            Some(char) => char,
-            None => break,
-        };
+    while let Some(char) = chars.next() {
         if *c == char {
             return true;
         }
@@ -50,11 +40,7 @@ fn is_matching_literal(c: &char, chars: &mut Peekable<Chars>) -> bool {
 }
 
 fn is_matching_digit(chars: &mut Peekable<Chars>) -> bool {
-    loop {
-        let char = match chars.next() {
-            Some(char) => char,
-            None => break,
-        };
+    while let Some(char) = chars.next() {
         if char.is_digit(10) {
             return true;
         }
@@ -63,11 +49,7 @@ fn is_matching_digit(chars: &mut Peekable<Chars>) -> bool {
 }
 
 fn is_matching_alphanumeric(chars: &mut Peekable<Chars>) -> bool {
-    loop {
-        let char = match chars.next() {
-            Some(char) => char,
-            None => break,
-        };
+    while let Some(char) = chars.next() {
         if char.is_alphanumeric() || char == '_' {
             return true;
         }
@@ -76,11 +58,7 @@ fn is_matching_alphanumeric(chars: &mut Peekable<Chars>) -> bool {
 }
 
 fn is_matching_positive_group(group: &String, chars: &mut Peekable<Chars>) -> bool {
-    loop {
-        let char = match chars.next() {
-            Some(char) => char,
-            None => break,
-        };
+    while let Some(char) = chars.next() {
         if group.contains(char) {
             return true;
         }
@@ -89,11 +67,7 @@ fn is_matching_positive_group(group: &String, chars: &mut Peekable<Chars>) -> bo
 }
 
 fn is_matching_negative_group(group: &String, chars: &mut Peekable<Chars>) -> bool {
-    loop {
-        let char = match chars.next() {
-            Some(char) => char,
-            None => break,
-        };
+    while let Some(char) = chars.next() {
         if group.contains(char) {
             return false;
         }
@@ -111,12 +85,8 @@ fn is_matching_end_of_string(string: &String, input_string: &str) -> bool {
 
 fn is_matching_one_or_more(c: &char, chars: &mut Peekable<Chars>) -> bool {
     let mut count: usize = 0;
-    loop {
-        let char = match chars.peek() {
-            Some(char) => *char,
-            None => break,
-        };
-        if *c != char {
+    while let Some(char) = chars.peek() {
+        if *c != *char {
             break;
         }
         chars.next();
