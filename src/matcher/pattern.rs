@@ -13,7 +13,7 @@ pub enum Pattern {
 
 pub fn parse_pattern(pattern: &str) -> Vec<Pattern> {
     let mut patterns = Vec::new();
-    let mut chars = pattern.chars();
+    let mut chars = pattern.chars().peekable();
 
     // End of string
     if pattern.ends_with('$') {
@@ -50,20 +50,17 @@ pub fn parse_pattern(pattern: &str) -> Vec<Pattern> {
 
         // Escape sequences
         if char == '\\' {
-            let char = chars.next();
-            match char {
+            match chars.next() {
                 Some('d') => patterns.push(Pattern::Digit),
                 Some('w') => patterns.push(Pattern::Alphanumeric),
-                Some(char) => patterns.push(Pattern::Literal(char)),
+                Some(c) => patterns.push(Pattern::Literal(c)),
                 None => panic!("Invalid escape sequence"),
             }
             continue;
         }
 
-        let next_char = chars.clone().next();
-
         // One or more
-        if next_char == Some('+') {
+        if let Some('+') = chars.peek() {
             patterns.push(Pattern::OneOrMore(char));
             chars.next();
             continue;
