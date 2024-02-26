@@ -7,8 +7,8 @@ pub enum Pattern {
     NegativeGroup(String),
     StartOfString(String),
     EndOfString(String),
+    ZeroOrOne(char),
     OneOrMore(char),
-    // ZeroOrOne(char),
 }
 
 pub fn parse_pattern(pattern: &str) -> Vec<Pattern> {
@@ -56,6 +56,13 @@ pub fn parse_pattern(pattern: &str) -> Vec<Pattern> {
                 Some(c) => patterns.push(Pattern::Literal(c)),
                 None => panic!("Invalid escape sequence"),
             }
+            continue;
+        }
+
+        // Zero or one
+        if let Some('?') = chars.peek() {
+            patterns.push(Pattern::ZeroOrOne(char));
+            chars.next();
             continue;
         }
 
@@ -163,6 +170,12 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_pattern_with_zero_or_one() {
+        assert_eq!(parse_pattern("h?"), vec![Pattern::ZeroOrOne('h')]);
+        assert_eq!(parse_pattern("A?"), vec![Pattern::ZeroOrOne('A')]);
+    }
+
+    #[test]
     fn test_parse_pattern_with_one_or_more() {
         assert_eq!(parse_pattern("h+"), vec![Pattern::OneOrMore('h')]);
         assert_eq!(parse_pattern("A+"), vec![Pattern::OneOrMore('A')]);
@@ -221,6 +234,22 @@ mod tests {
         assert_eq!(
             parse_pattern(r"^yolo"),
             vec![Pattern::StartOfString("yolo".to_string())]
+        );
+        assert_eq!(
+            parse_pattern("ab?c"),
+            vec![
+                Pattern::Literal('a'),
+                Pattern::ZeroOrOne('b'),
+                Pattern::Literal('c')
+            ]
+        );
+        assert_eq!(
+            parse_pattern("hey?"),
+            vec![
+                Pattern::Literal('h'),
+                Pattern::Literal('e'),
+                Pattern::ZeroOrOne('y')
+            ]
         );
         assert_eq!(
             parse_pattern("ab+c"),

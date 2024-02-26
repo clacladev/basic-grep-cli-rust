@@ -20,6 +20,7 @@ fn is_matching(input_string: &str, patterns: &[Pattern]) -> bool {
             Pattern::NegativeGroup(group) => is_matching_negative_group(group, &mut chars),
             Pattern::StartOfString(string) => is_matching_start_of_string(string, input_string),
             Pattern::EndOfString(string) => is_matching_end_of_string(string, input_string),
+            Pattern::ZeroOrOne(c) => is_matching_zero_or_one(c, &mut chars),
             Pattern::OneOrMore(c) => is_matching_one_or_more(c, &mut chars),
         };
         if !is_match {
@@ -81,6 +82,18 @@ fn is_matching_start_of_string(string: &String, input_string: &str) -> bool {
 
 fn is_matching_end_of_string(string: &String, input_string: &str) -> bool {
     input_string.ends_with(string)
+}
+
+fn is_matching_zero_or_one(c: &char, chars: &mut Peekable<Chars>) -> bool {
+    let mut count: usize = 0;
+    while let Some(char) = chars.peek() {
+        if *c != *char {
+            break;
+        }
+        chars.next();
+        count += 1;
+    }
+    count <= 1
 }
 
 fn is_matching_one_or_more(c: &char, chars: &mut Peekable<Chars>) -> bool {
@@ -184,6 +197,18 @@ mod tests {
         assert_eq!(match_pattern("log", "log$"), true);
         assert_eq!(match_pattern("slog", "log$"), true);
         assert_eq!(match_pattern("logs", "log$"), false);
+    }
+
+    #[test]
+    fn test_match_pattern_zero_or_one() {
+        assert_eq!(match_pattern("log", "log?"), true);
+        assert_eq!(match_pattern("loggg", "log?"), false);
+        assert_eq!(match_pattern("logs", "logs?"), true);
+        assert_eq!(match_pattern("logs", "log?s"), true);
+        assert_eq!(match_pattern("logggs", "log?s"), false);
+        assert_eq!(match_pattern("logs", "a?"), true);
+        assert_eq!(match_pattern("los", "log?"), true);
+        assert_eq!(match_pattern("log", "a?og"), true);
     }
 
     #[test]
