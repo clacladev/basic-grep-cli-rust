@@ -1,3 +1,5 @@
+use std::str::Chars;
+
 use self::pattern::{parse_pattern, Pattern};
 
 mod pattern;
@@ -10,96 +12,21 @@ pub fn match_pattern(input_string: &str, pattern_string: &str) -> bool {
 fn is_matching(input_string: &str, patterns: &[Pattern]) -> bool {
     let mut chars = input_string.chars();
 
-    'patterns_loop: for pattern in patterns {
-        let mut char = match chars.next() {
+    for pattern in patterns {
+        let char = match chars.next() {
             Some(char) => char,
             None => return false,
         };
 
         let is_match = match pattern {
-            Pattern::Literal(c) => {
-                loop {
-                    if *c == char {
-                        continue 'patterns_loop;
-                    }
-                    char = match chars.next() {
-                        Some(char) => char,
-                        None => break,
-                    };
-                }
-                false
-            }
-            Pattern::Digit => {
-                loop {
-                    if char.is_digit(10) {
-                        continue 'patterns_loop;
-                    }
-                    char = match chars.next() {
-                        Some(char) => char,
-                        None => break,
-                    };
-                }
-                false
-            }
-            Pattern::Alphanumeric => {
-                loop {
-                    if char.is_alphanumeric() || char == '_' {
-                        continue 'patterns_loop;
-                    }
-                    char = match chars.next() {
-                        Some(char) => char,
-                        None => break,
-                    };
-                }
-                false
-            }
-            Pattern::PositiveGroup(group) => {
-                loop {
-                    if group.contains(char) {
-                        return true;
-                    }
-                    char = match chars.next() {
-                        Some(char) => char,
-                        None => break,
-                    };
-                }
-                false
-            }
-            Pattern::NegativeGroup(group) => {
-                loop {
-                    if group.contains(char) {
-                        return false;
-                    }
-                    char = match chars.next() {
-                        Some(char) => char,
-                        None => break,
-                    };
-                }
-                true
-            }
-            Pattern::StartOfString(string) => {
-                let is_match = input_string.starts_with(string);
-                if is_match {
-                    continue 'patterns_loop;
-                }
-                false
-            }
-            Pattern::EndOfString(string) => input_string.ends_with(string),
-            Pattern::OneOrMore(c) => {
-                let mut count = 0;
-                let mut chars_copy = chars.clone();
-                loop {
-                    if *c != char {
-                        break;
-                    }
-                    count += 1;
-                    char = match chars_copy.next() {
-                        Some(char) => char,
-                        None => break,
-                    };
-                }
-                count >= 1
-            }
+            Pattern::Literal(c) => is_matching_literal(c, char, &mut chars),
+            Pattern::Digit => is_matching_digit(char, &mut chars),
+            Pattern::Alphanumeric => is_matching_alphanumeric(char, &mut chars),
+            Pattern::PositiveGroup(group) => is_matching_positive_group(group, char, &mut chars),
+            Pattern::NegativeGroup(group) => is_matching_negative_group(group, char, &mut chars),
+            Pattern::StartOfString(string) => is_matching_start_of_string(string, input_string),
+            Pattern::EndOfString(string) => is_matching_end_of_string(string, input_string),
+            Pattern::OneOrMore(c) => is_matching_one_or_more(c, char, &mut chars),
         };
 
         if !is_match {
@@ -108,6 +35,101 @@ fn is_matching(input_string: &str, patterns: &[Pattern]) -> bool {
     }
 
     true
+}
+
+fn is_matching_literal(c: &char, char: char, chars: &mut Chars) -> bool {
+    let mut char = char;
+    loop {
+        if *c == char {
+            return true;
+        }
+        char = match chars.next() {
+            Some(char) => char,
+            None => break,
+        };
+    }
+    false
+}
+
+fn is_matching_digit(char: char, chars: &mut Chars) -> bool {
+    let mut char = char;
+    loop {
+        if char.is_digit(10) {
+            return true;
+        }
+        char = match chars.next() {
+            Some(char) => char,
+            None => break,
+        };
+    }
+    false
+}
+
+fn is_matching_alphanumeric(char: char, chars: &mut Chars) -> bool {
+    let mut char = char;
+    loop {
+        if char.is_alphanumeric() || char == '_' {
+            return true;
+        }
+        char = match chars.next() {
+            Some(char) => char,
+            None => break,
+        };
+    }
+    false
+}
+
+fn is_matching_positive_group(group: &String, char: char, chars: &mut Chars) -> bool {
+    let mut char = char;
+    loop {
+        if group.contains(char) {
+            return true;
+        }
+        char = match chars.next() {
+            Some(char) => char,
+            None => break,
+        };
+    }
+    false
+}
+
+fn is_matching_negative_group(group: &String, char: char, chars: &mut Chars) -> bool {
+    let mut char = char;
+    loop {
+        if group.contains(char) {
+            return false;
+        }
+        char = match chars.next() {
+            Some(char) => char,
+            None => break,
+        };
+    }
+    true
+}
+
+fn is_matching_start_of_string(string: &String, input_string: &str) -> bool {
+    input_string.starts_with(string)
+}
+
+fn is_matching_end_of_string(string: &String, input_string: &str) -> bool {
+    input_string.ends_with(string)
+}
+
+fn is_matching_one_or_more(c: &char, char: char, chars: &mut Chars) -> bool {
+    let mut char = char;
+    let mut count = 0;
+    let mut chars_copy = chars.clone();
+    loop {
+        if *c != char {
+            break;
+        }
+        count += 1;
+        char = match chars_copy.next() {
+            Some(char) => char,
+            None => break,
+        };
+    }
+    count >= 1
 }
 
 #[cfg(test)]

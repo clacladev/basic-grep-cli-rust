@@ -8,6 +8,7 @@ pub enum Pattern {
     StartOfString(String),
     EndOfString(String),
     OneOrMore(char),
+    // ZeroOrOne(char),
 }
 
 pub fn parse_pattern(pattern: &str) -> Vec<Pattern> {
