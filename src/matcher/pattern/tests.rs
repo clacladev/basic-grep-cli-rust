@@ -149,6 +149,35 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_pattern_with_backreference() {
+        assert_eq!(
+            parse_pattern("(a) \\1.(b) \\2"),
+            vec![
+                Pattern::CapturingGroup(vec![Pattern::Literal('a')]),
+                Pattern::Literal(' '),
+                Pattern::Backreference(1),
+                Pattern::Wildcard,
+                Pattern::CapturingGroup(vec![Pattern::Literal('b')]),
+                Pattern::Literal(' '),
+                Pattern::Backreference(2)
+            ]
+        );
+        assert_eq!(
+            parse_pattern("(a|b).\\1.\\2"),
+            vec![
+                Pattern::Alternation(vec![
+                    vec![Pattern::Literal('a')],
+                    vec![Pattern::Literal('b')]
+                ]),
+                Pattern::Wildcard,
+                Pattern::Backreference(1),
+                Pattern::Wildcard,
+                Pattern::Backreference(2)
+            ]
+        );
+    }
+
+    #[test]
     fn test_parse_pattern_with_combinations_of_patterns() {
         assert_eq!(
             parse_pattern("[a][b]"),
@@ -267,6 +296,18 @@ mod tests {
                 ],
                 vec![Pattern::ZeroOrOne('f'), Pattern::OneOrMore('i')]
             ])]
+        );
+        assert_eq!(
+            parse_pattern("(.a)_\\1.(b+)_\\2"),
+            vec![
+                Pattern::CapturingGroup(vec![Pattern::Wildcard, Pattern::Literal('a')]),
+                Pattern::Literal('_'),
+                Pattern::Backreference(1),
+                Pattern::Wildcard,
+                Pattern::CapturingGroup(vec![Pattern::OneOrMore('b')]),
+                Pattern::Literal('_'),
+                Pattern::Backreference(2)
+            ]
         );
     }
 }

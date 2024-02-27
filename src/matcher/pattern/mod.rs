@@ -29,6 +29,7 @@ pub enum Pattern {
     Wildcard,
     CapturingGroup(Vec<Self>),
     Alternation(Vec<Vec<Self>>),
+    Backreference(usize),
 }
 
 pub fn parse_pattern(pattern: &str) -> Vec<Pattern> {
@@ -73,6 +74,9 @@ pub fn parse_pattern(pattern: &str) -> Vec<Pattern> {
             match chars.next() {
                 Some(DIGIT_SYMBOL) => patterns.push(Pattern::Digit),
                 Some(ALPHANUMERIC_SYMBOL) => patterns.push(Pattern::Alphanumeric),
+                Some(c) if c.is_digit(10) => patterns.push(Pattern::Backreference(
+                    c.to_string().parse::<usize>().unwrap(),
+                )),
                 Some(c) => patterns.push(Pattern::Literal(c)),
                 None => panic!("Invalid escape sequence"),
             }
