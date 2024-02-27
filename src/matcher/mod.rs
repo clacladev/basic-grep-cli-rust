@@ -24,8 +24,8 @@ fn is_matching(input_string: &str, patterns: &[Pattern]) -> bool {
             Pattern::ZeroOrOne(c) => is_matching_zero_or_one(c, &mut chars),
             Pattern::OneOrMore(c) => is_matching_one_or_more(c, &mut chars),
             Pattern::Wildcard => is_matching_wildcard(&mut chars),
+            Pattern::CapturingGroup(group) => is_matching_capturing_group(group, &mut chars),
             Pattern::Alternation(groups) => is_matching_alternation(groups, &mut chars),
-            Pattern::CapturingGroup(_) => unimplemented!(),
             Pattern::Backreference(_) => unimplemented!(),
         };
         if !is_match {
@@ -118,6 +118,11 @@ fn is_matching_wildcard(chars: &mut Peekable<Chars>) -> bool {
         Some(_) => true,
         None => false,
     }
+}
+
+fn is_matching_capturing_group(group: &Vec<Pattern>, chars: &mut Peekable<Chars>) -> bool {
+    let remaining_string: String = chars.collect();
+    is_matching(&remaining_string, group)
 }
 
 fn is_matching_alternation(groups: &Vec<Vec<Pattern>>, chars: &mut Peekable<Chars>) -> bool {

@@ -122,6 +122,16 @@ mod tests {
     }
 
     #[test]
+    fn test_match_pattern_capturing_group() {
+        assert_eq!(match_pattern("fish", "(dog)"), false);
+        assert_eq!(match_pattern("dog", "(dog)"), true);
+        assert_eq!(match_pattern("doggo", "(dog)"), true);
+        assert_eq!(match_pattern("cat", "(cat)"), true);
+        assert_eq!(match_pattern("fish", "(f..h)"), true);
+        assert_eq!(match_pattern("fish", "(..s?\\w)"), true);
+    }
+
+    #[test]
     fn test_match_pattern_alternation() {
         assert_eq!(match_pattern("fish", "(dog|cat)"), false);
         assert_eq!(match_pattern("dog", "(dog|cat)"), true);
