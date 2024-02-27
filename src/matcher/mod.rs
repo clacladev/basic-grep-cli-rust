@@ -25,6 +25,7 @@ fn is_matching(input_string: &str, patterns: &[Pattern]) -> bool {
             Pattern::OneOrMore(c) => is_matching_one_or_more(c, &mut chars),
             Pattern::Wildcard => is_matching_wildcard(&mut chars),
             Pattern::Alternation(groups) => is_matching_alternation(groups, &mut chars),
+            Pattern::CapturingGroup(_) => unimplemented!(),
         };
         if !is_match {
             return false;

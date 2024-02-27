@@ -11,11 +11,11 @@ const GROUP_START_SYMBOL: char = '[';
 const GROUP_END_SYMBOL: char = ']';
 const NEGATIVE_GROUP_SYMBOL: char = '^';
 const WILDCARD_SYMBOL: char = '.';
-const ALTERNATION_START_SYMBOL: char = '(';
-const ALTERNATION_END_SYMBOL: char = ')';
+const CAPTURING_GROUP_START_SYMBOL: char = '(';
+const CAPTURING_GROUP_END_SYMBOL: char = ')';
 const ALTERNATION_SEPARATOR_SYMBOL: char = '|';
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Pattern {
     Literal(char),
     Digit,
@@ -27,6 +27,7 @@ pub enum Pattern {
     ZeroOrOne(char),
     OneOrMore(char),
     Wildcard,
+    CapturingGroup(Vec<Self>),
     Alternation(Vec<Vec<Self>>),
 }
 
@@ -78,20 +79,24 @@ pub fn parse_pattern(pattern: &str) -> Vec<Pattern> {
             continue;
         }
 
-        // Alternation group
-        if char == ALTERNATION_START_SYMBOL {
+        // Capturing or alternation group
+        if char == CAPTURING_GROUP_START_SYMBOL {
             let mut alternation_string = String::new();
             while let Some(char) = chars.next() {
-                if char == ALTERNATION_END_SYMBOL {
+                if char == CAPTURING_GROUP_END_SYMBOL {
                     break;
                 }
                 alternation_string.push(char);
             }
-            let patterns_groups = alternation_string
+            let patterns_groups: Vec<Vec<Pattern>> = alternation_string
                 .split(ALTERNATION_SEPARATOR_SYMBOL)
                 .map(parse_pattern)
                 .collect();
-            patterns.push(Pattern::Alternation(patterns_groups));
+            if patterns_groups.len() == 1 {
+                patterns.push(Pattern::CapturingGroup(patterns_groups[0].clone()));
+            } else {
+                patterns.push(Pattern::Alternation(patterns_groups));
+            }
             continue;
         }
 

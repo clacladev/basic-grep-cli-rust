@@ -115,10 +115,28 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_pattern_with_alternation() {
+    fn test_parse_pattern_with_capturing_group() {
         assert_eq!(
             parse_pattern("(a)"),
-            vec![Pattern::Alternation(vec![vec![Pattern::Literal('a')]])]
+            vec![Pattern::CapturingGroup(vec![Pattern::Literal('a')])]
+        );
+        assert_eq!(
+            parse_pattern("(c\\d)"),
+            vec![Pattern::CapturingGroup(vec![
+                Pattern::Literal('c'),
+                Pattern::Digit
+            ])]
+        );
+    }
+
+    #[test]
+    fn test_parse_pattern_with_alternation() {
+        assert_eq!(
+            parse_pattern("(a|b)"),
+            vec![Pattern::Alternation(vec![
+                vec![Pattern::Literal('a')],
+                vec![Pattern::Literal('b')]
+            ])]
         );
         assert_eq!(
             parse_pattern("(a|b|cc)"),
@@ -224,6 +242,15 @@ mod tests {
                 Pattern::Wildcard,
                 Pattern::OneOrMore('y')
             ]
+        );
+        assert_eq!(
+            parse_pattern("(c?**\\w)"),
+            vec![Pattern::CapturingGroup(vec![
+                Pattern::ZeroOrOne('c'),
+                Pattern::Literal('*'),
+                Pattern::Literal('*'),
+                Pattern::Alphanumeric
+            ])]
         );
         assert_eq!(
             parse_pattern("(dog|.ss|f?i+)"),
