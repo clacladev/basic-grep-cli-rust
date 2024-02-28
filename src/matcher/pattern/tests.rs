@@ -356,29 +356,25 @@ mod tests {
                 Pattern::Literal('s'),
             ]
         );
-        // assert_eq!(
-        //     parse_pattern("([abcd]+) is \\1, not [^xyz]+"),
-        //     vec![
-        //         Pattern::CapturingGroup(vec![Pattern::OneOrMore(Pattern::PositiveGroup(
-        //             "abcd".to_string()
-        //         ))]),
-        //         Pattern::Literal(' '),
-        //         Pattern::Literal('i'),
-        //         Pattern::Literal('s'),
-        //         Pattern::Literal(' '),
-        //         Pattern::Backreference(1),
-        //         Pattern::Literal(','),
-        //         Pattern::Literal(' '),
-        //         Pattern::Literal('n'),
-        //         Pattern::Literal('o'),
-        //         Pattern::Literal('t'),
-        //         Pattern::Literal(' '),
-        //         Pattern::Literal('t'),
-        //         Pattern::Literal('i'),
-        //         Pattern::Literal('m'),
-        //         Pattern::Literal('e'),
-        //         Pattern::Literal('s'),
-        //     ]
-        // );
+        assert_eq!(
+            parse_pattern("([abcd]+) is \\1, not [^xyz]+"),
+            vec![
+                Pattern::CapturingGroup(vec![Pattern::OneOrMore(Box::new(
+                    Pattern::PositiveGroup("abcd".to_string())
+                ))]),
+                Pattern::Literal(' '),
+                Pattern::Literal('i'),
+                Pattern::Literal('s'),
+                Pattern::Literal(' '),
+                Pattern::Backreference(1),
+                Pattern::Literal(','),
+                Pattern::Literal(' '),
+                Pattern::Literal('n'),
+                Pattern::Literal('o'),
+                Pattern::Literal('t'),
+                Pattern::Literal(' '),
+                Pattern::OneOrMore(Box::new(Pattern::NegativeGroup("xyz".to_string())))
+            ]
+        );
     }
 }

@@ -105,16 +105,20 @@ pub fn parse_pattern(pattern: &str) -> Vec<Pattern> {
         }
 
         // Zero or one
-        if let Some(&ZERO_OR_ONE_SYMBOL) = chars.peek() {
-            patterns.push(Pattern::ZeroOrOne(Box::new(Pattern::Literal(char))));
-            chars.next();
+        if char == ZERO_OR_ONE_SYMBOL {
+            let Some(previous_pattern) = patterns.pop() else {
+                panic!("Invalid pattern");
+            };
+            patterns.push(Pattern::ZeroOrOne(Box::new(previous_pattern)));
             continue;
         }
 
         // One or more
-        if let Some(&ONE_OR_MORE_SYMBOL) = chars.peek() {
-            patterns.push(Pattern::OneOrMore(Box::new(Pattern::Literal(char))));
-            chars.next();
+        if char == ONE_OR_MORE_SYMBOL {
+            let Some(previous_pattern) = patterns.pop() else {
+                panic!("Invalid pattern");
+            };
+            patterns.push(Pattern::OneOrMore(Box::new(previous_pattern)));
             continue;
         }
 

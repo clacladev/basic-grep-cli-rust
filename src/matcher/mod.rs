@@ -67,21 +67,17 @@ fn is_matching_alphanumeric(chars: &mut Peekable<Chars>) -> bool {
 }
 
 fn is_matching_positive_group(group: &String, chars: &mut Peekable<Chars>) -> bool {
-    while let Some(char) = chars.next() {
-        if group.contains(char) {
-            return true;
-        }
+    if let Some(char) = chars.next() {
+        return group.contains(char);
     }
     false
 }
 
 fn is_matching_negative_group(group: &String, chars: &mut Peekable<Chars>) -> bool {
-    while let Some(char) = chars.next() {
-        if group.contains(char) {
-            return false;
-        }
+    if let Some(char) = chars.next() {
+        return !group.contains(char);
     }
-    true
+    false
 }
 
 fn is_matching_start_of_string(string: &String, chars: &mut Peekable<Chars>) -> bool {

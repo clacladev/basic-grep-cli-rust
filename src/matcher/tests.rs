@@ -54,20 +54,16 @@ mod tests {
     #[test]
     fn test_match_pattern_positive_group() {
         assert_eq!(match_pattern("hello world", "[abc]"), false);
-        assert_eq!(match_pattern("hello world", "[abcd]"), true);
-        assert_eq!(match_pattern("hello world", "[etz]"), true);
-        assert_eq!(match_pattern("hello world", "[cd]"), true);
-        assert_eq!(match_pattern("hello world", "[abctyj]"), false);
+        assert_eq!(match_pattern("hello world", "[abcd]"), false);
+        assert_eq!(match_pattern("hello world", "[etz]"), false);
         assert_eq!(match_pattern("hello world", "[abctyjh]"), true);
     }
 
     #[test]
     fn test_match_pattern_negative_group() {
         assert_eq!(match_pattern("hello world", "[^abc]"), true);
-        assert_eq!(match_pattern("hello world", "[^abcd]"), false);
-        assert_eq!(match_pattern("hello world", "[^etz]"), false);
-        assert_eq!(match_pattern("hello world", "[^cd]"), false);
-        assert_eq!(match_pattern("hello world", "[^abctyj]"), true);
+        assert_eq!(match_pattern("hello world", "[^abcd]"), true);
+        assert_eq!(match_pattern("hello world", "[^etz]"), true);
         assert_eq!(match_pattern("hello world", "[^abctyjh]"), false);
     }
 
@@ -159,5 +155,10 @@ mod tests {
             ),
             true
         );
+        assert_eq!(
+            match_pattern("abcd is abcd, not efg", "([abcd]+) is \\1, not [^xyz]+"),
+            true
+        );
+        assert_eq!(match_pattern("abcd is abcd", "([abcd]+) is \\1"), true);
     }
 }
