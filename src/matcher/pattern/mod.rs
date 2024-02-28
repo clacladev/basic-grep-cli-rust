@@ -24,8 +24,8 @@ pub enum Pattern {
     NegativeGroup(String),
     StartOfString(String),
     EndOfString(String),
-    ZeroOrOne(char),
-    OneOrMore(char),
+    ZeroOrOne(Box<Self>),
+    OneOrMore(Box<Self>),
     Wildcard,
     CapturingGroup(Vec<Self>),
     Alternation(Vec<Vec<Self>>),
@@ -106,14 +106,14 @@ pub fn parse_pattern(pattern: &str) -> Vec<Pattern> {
 
         // Zero or one
         if let Some(&ZERO_OR_ONE_SYMBOL) = chars.peek() {
-            patterns.push(Pattern::ZeroOrOne(char));
+            patterns.push(Pattern::ZeroOrOne(Box::new(Pattern::Literal(char))));
             chars.next();
             continue;
         }
 
         // One or more
         if let Some(&ONE_OR_MORE_SYMBOL) = chars.peek() {
-            patterns.push(Pattern::OneOrMore(char));
+            patterns.push(Pattern::OneOrMore(Box::new(Pattern::Literal(char))));
             chars.next();
             continue;
         }

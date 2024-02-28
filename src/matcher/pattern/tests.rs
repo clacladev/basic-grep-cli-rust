@@ -89,14 +89,26 @@ mod tests {
 
     #[test]
     fn test_parse_pattern_with_zero_or_one() {
-        assert_eq!(parse_pattern("h?"), vec![Pattern::ZeroOrOne('h')]);
-        assert_eq!(parse_pattern("A?"), vec![Pattern::ZeroOrOne('A')]);
+        assert_eq!(
+            parse_pattern("h?"),
+            vec![Pattern::ZeroOrOne(Box::new(Pattern::Literal('h')))]
+        );
+        assert_eq!(
+            parse_pattern("A?"),
+            vec![Pattern::ZeroOrOne(Box::new(Pattern::Literal('A')))]
+        );
     }
 
     #[test]
     fn test_parse_pattern_with_one_or_more() {
-        assert_eq!(parse_pattern("h+"), vec![Pattern::OneOrMore('h')]);
-        assert_eq!(parse_pattern("A+"), vec![Pattern::OneOrMore('A')]);
+        assert_eq!(
+            parse_pattern("h+"),
+            vec![Pattern::OneOrMore(Box::new(Pattern::Literal('h')))]
+        );
+        assert_eq!(
+            parse_pattern("A+"),
+            vec![Pattern::OneOrMore(Box::new(Pattern::Literal('A')))]
+        );
     }
 
     #[test]
@@ -235,7 +247,7 @@ mod tests {
             parse_pattern("ab?c"),
             vec![
                 Pattern::Literal('a'),
-                Pattern::ZeroOrOne('b'),
+                Pattern::ZeroOrOne(Box::new(Pattern::Literal('b'))),
                 Pattern::Literal('c')
             ]
         );
@@ -244,14 +256,14 @@ mod tests {
             vec![
                 Pattern::Literal('h'),
                 Pattern::Literal('e'),
-                Pattern::ZeroOrOne('y')
+                Pattern::ZeroOrOne(Box::new(Pattern::Literal('y')))
             ]
         );
         assert_eq!(
             parse_pattern("ab+c"),
             vec![
                 Pattern::Literal('a'),
-                Pattern::OneOrMore('b'),
+                Pattern::OneOrMore(Box::new(Pattern::Literal('b'))),
                 Pattern::Literal('c')
             ]
         );
@@ -260,22 +272,22 @@ mod tests {
             vec![
                 Pattern::Literal('h'),
                 Pattern::Literal('e'),
-                Pattern::OneOrMore('y')
+                Pattern::OneOrMore(Box::new(Pattern::Literal('y')))
             ]
         );
         assert_eq!(
             parse_pattern("h?e.y+"),
             vec![
-                Pattern::ZeroOrOne('h'),
+                Pattern::ZeroOrOne(Box::new(Pattern::Literal('h'))),
                 Pattern::Literal('e'),
                 Pattern::Wildcard,
-                Pattern::OneOrMore('y')
+                Pattern::OneOrMore(Box::new(Pattern::Literal('y')))
             ]
         );
         assert_eq!(
             parse_pattern("(c?**\\w)"),
             vec![Pattern::CapturingGroup(vec![
-                Pattern::ZeroOrOne('c'),
+                Pattern::ZeroOrOne(Box::new(Pattern::Literal('c'))),
                 Pattern::Literal('*'),
                 Pattern::Literal('*'),
                 Pattern::Alphanumeric
@@ -294,7 +306,10 @@ mod tests {
                     Pattern::Literal('s'),
                     Pattern::Literal('s')
                 ],
-                vec![Pattern::ZeroOrOne('f'), Pattern::OneOrMore('i')]
+                vec![
+                    Pattern::ZeroOrOne(Box::new(Pattern::Literal('f'))),
+                    Pattern::OneOrMore(Box::new(Pattern::Literal('i')))
+                ]
             ])]
         );
         assert_eq!(
@@ -304,7 +319,7 @@ mod tests {
                 Pattern::Literal('_'),
                 Pattern::Backreference(1),
                 Pattern::Wildcard,
-                Pattern::CapturingGroup(vec![Pattern::OneOrMore('b')]),
+                Pattern::CapturingGroup(vec![Pattern::OneOrMore(Box::new(Pattern::Literal('b')))]),
                 Pattern::Literal('_'),
                 Pattern::Backreference(2)
             ]
@@ -341,5 +356,29 @@ mod tests {
                 Pattern::Literal('s'),
             ]
         );
+        // assert_eq!(
+        //     parse_pattern("([abcd]+) is \\1, not [^xyz]+"),
+        //     vec![
+        //         Pattern::CapturingGroup(vec![Pattern::OneOrMore(Pattern::PositiveGroup(
+        //             "abcd".to_string()
+        //         ))]),
+        //         Pattern::Literal(' '),
+        //         Pattern::Literal('i'),
+        //         Pattern::Literal('s'),
+        //         Pattern::Literal(' '),
+        //         Pattern::Backreference(1),
+        //         Pattern::Literal(','),
+        //         Pattern::Literal(' '),
+        //         Pattern::Literal('n'),
+        //         Pattern::Literal('o'),
+        //         Pattern::Literal('t'),
+        //         Pattern::Literal(' '),
+        //         Pattern::Literal('t'),
+        //         Pattern::Literal('i'),
+        //         Pattern::Literal('m'),
+        //         Pattern::Literal('e'),
+        //         Pattern::Literal('s'),
+        //     ]
+        // );
     }
 }

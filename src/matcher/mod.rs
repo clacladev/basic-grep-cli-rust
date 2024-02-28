@@ -102,28 +102,30 @@ fn is_matching_end_of_string(string: &String, chars: &mut Peekable<Chars>) -> bo
     result
 }
 
-fn is_matching_zero_or_one(c: &char, chars: &mut Peekable<Chars>) -> bool {
+fn is_matching_zero_or_one(pattern: &Pattern, chars: &mut Peekable<Chars>) -> bool {
     let mut count: usize = 0;
-    while let Some(char) = chars.peek() {
-        if *c != *char {
-            break;
+    loop {
+        let (is_match, checked_chars_count) = is_matching(&[pattern.clone()], &mut chars.clone());
+        if is_match {
+            chars.nth(checked_chars_count - 1);
+            count += 1;
+            continue;
         }
-        chars.next();
-        count += 1;
+        return count <= 1;
     }
-    count <= 1
 }
 
-fn is_matching_one_or_more(c: &char, chars: &mut Peekable<Chars>) -> bool {
+fn is_matching_one_or_more(pattern: &Pattern, chars: &mut Peekable<Chars>) -> bool {
     let mut count: usize = 0;
-    while let Some(char) = chars.peek() {
-        if *c != *char {
-            break;
+    loop {
+        let (is_match, checked_chars_count) = is_matching(&[pattern.clone()], &mut chars.clone());
+        if is_match {
+            chars.nth(checked_chars_count - 1);
+            count += 1;
+            continue;
         }
-        chars.next();
-        count += 1;
+        return count >= 1;
     }
-    count >= 1
 }
 
 fn is_matching_wildcard(chars: &mut Peekable<Chars>) -> bool {
