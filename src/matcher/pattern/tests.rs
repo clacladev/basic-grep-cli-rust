@@ -309,5 +309,37 @@ mod tests {
                 Pattern::Backreference(2)
             ]
         );
+        assert_eq!(
+            parse_pattern("(\\w\\w\\w\\w \\d\\d\\d) is doing \\1 times"),
+            vec![
+                Pattern::CapturingGroup(vec![
+                    Pattern::Alphanumeric,
+                    Pattern::Alphanumeric,
+                    Pattern::Alphanumeric,
+                    Pattern::Alphanumeric,
+                    Pattern::Literal(' '),
+                    Pattern::Digit,
+                    Pattern::Digit,
+                    Pattern::Digit,
+                ]),
+                Pattern::Literal(' '),
+                Pattern::Literal('i'),
+                Pattern::Literal('s'),
+                Pattern::Literal(' '),
+                Pattern::Literal('d'),
+                Pattern::Literal('o'),
+                Pattern::Literal('i'),
+                Pattern::Literal('n'),
+                Pattern::Literal('g'),
+                Pattern::Literal(' '),
+                Pattern::Backreference(1),
+                Pattern::Literal(' '),
+                Pattern::Literal('t'),
+                Pattern::Literal('i'),
+                Pattern::Literal('m'),
+                Pattern::Literal('e'),
+                Pattern::Literal('s'),
+            ]
+        );
     }
 }

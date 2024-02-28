@@ -5,13 +5,14 @@ mod pattern;
 mod tests;
 
 pub fn match_pattern(input_string: &str, pattern_string: &str) -> bool {
+    let mut chars = input_string.chars().peekable();
     let patterns = parse_pattern(pattern_string);
-    is_matching(input_string, &patterns)
+    let (is_match, _) = is_matching(&patterns, &mut chars);
+    is_match
 }
 
-fn is_matching(input_string: &str, patterns: &[Pattern]) -> bool {
-    let mut chars = input_string.chars().peekable();
-
+fn is_matching(patterns: &[Pattern], mut chars: &mut Peekable<Chars>) -> (bool, usize) {
+    let initial_chars_count = chars.clone().count();
     for pattern in patterns {
         let is_match = match pattern {
             Pattern::Literal(c) => is_matching_literal(c, &mut chars),
@@ -19,21 +20,23 @@ fn is_matching(input_string: &str, patterns: &[Pattern]) -> bool {
             Pattern::Alphanumeric => is_matching_alphanumeric(&mut chars),
             Pattern::PositiveGroup(group) => is_matching_positive_group(group, &mut chars),
             Pattern::NegativeGroup(group) => is_matching_negative_group(group, &mut chars),
-            Pattern::StartOfString(string) => is_matching_start_of_string(string, input_string),
-            Pattern::EndOfString(string) => is_matching_end_of_string(string, input_string),
+            Pattern::StartOfString(string) => is_matching_start_of_string(string, &mut chars),
+            Pattern::EndOfString(string) => is_matching_end_of_string(string, &mut chars),
             Pattern::ZeroOrOne(c) => is_matching_zero_or_one(c, &mut chars),
             Pattern::OneOrMore(c) => is_matching_one_or_more(c, &mut chars),
             Pattern::Wildcard => is_matching_wildcard(&mut chars),
             Pattern::CapturingGroup(group) => is_matching_capturing_group(group, &mut chars),
             Pattern::Alternation(groups) => is_matching_alternation(groups, &mut chars),
-            Pattern::Backreference(_) => unimplemented!(),
+            Pattern::Backreference(number) => {
+                is_matching_backreference(*number, &mut chars, patterns)
+            }
         };
         if !is_match {
-            return false;
+            return (false, initial_chars_count - chars.count());
         }
     }
 
-    true
+    (true, initial_chars_count - chars.count())
 }
 
 fn is_matching_literal(c: &char, chars: &mut Peekable<Chars>) -> bool {
@@ -81,12 +84,22 @@ fn is_matching_negative_group(group: &String, chars: &mut Peekable<Chars>) -> bo
     true
 }
 
-fn is_matching_start_of_string(string: &String, input_string: &str) -> bool {
-    input_string.starts_with(string)
+fn is_matching_start_of_string(string: &String, chars: &mut Peekable<Chars>) -> bool {
+    let remaining_string: String = chars.collect();
+    let result = remaining_string.starts_with(string);
+    if result {
+        chars.nth(string.len() - 1);
+    }
+    result
 }
 
-fn is_matching_end_of_string(string: &String, input_string: &str) -> bool {
-    input_string.ends_with(string)
+fn is_matching_end_of_string(string: &String, chars: &mut Peekable<Chars>) -> bool {
+    let remaining_string: String = chars.collect();
+    let result = remaining_string.ends_with(string);
+    if result {
+        chars.nth_back(string.len() - 1);
+    }
+    result
 }
 
 fn is_matching_zero_or_one(c: &char, chars: &mut Peekable<Chars>) -> bool {
@@ -121,16 +134,45 @@ fn is_matching_wildcard(chars: &mut Peekable<Chars>) -> bool {
 }
 
 fn is_matching_capturing_group(group: &Vec<Pattern>, chars: &mut Peekable<Chars>) -> bool {
-    let remaining_string: String = chars.collect();
-    is_matching(&remaining_string, group)
+    let (is_match, checked_chars_count) = is_matching(group, &mut chars.clone());
+    if is_match {
+        chars.nth(checked_chars_count - 1);
+    }
+    is_match
 }
 
 fn is_matching_alternation(groups: &Vec<Vec<Pattern>>, chars: &mut Peekable<Chars>) -> bool {
-    let remaining_string: String = chars.collect();
     for group in groups {
-        if is_matching(&remaining_string, group) {
+        let (is_match, checked_chars_count) = is_matching(group, &mut chars.clone());
+        if is_match {
+            chars.nth(checked_chars_count - 1);
             return true;
         }
     }
+    false
+}
+
+fn is_matching_backreference(
+    number: usize,
+    chars: &mut Peekable<Chars>,
+    patterns: &[Pattern],
+) -> bool {
+    let index = number - 1;
+    let pattern = patterns
+        .iter()
+        .filter(|p| match p {
+            Pattern::CapturingGroup(_) | Pattern::Alternation(_) => true,
+            _ => false,
+        })
+        .nth(index);
+
+    if let Some(pattern) = pattern {
+        let (is_match, checked_chars_count) = is_matching(&[pattern.clone()], &mut chars.clone());
+        if is_match {
+            chars.nth(checked_chars_count - 1);
+            return true;
+        }
+    }
+
     false
 }

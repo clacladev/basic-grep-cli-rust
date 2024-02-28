@@ -140,4 +140,24 @@ mod tests {
         assert_eq!(match_pattern("fish", "(dog|cat|f..h)"), true);
         assert_eq!(match_pattern("fish", "(dog|..s?\\w)"), true);
     }
+
+    #[test]
+    fn test_match_pattern_backreference() {
+        assert_eq!(match_pattern("fish", "\\1"), false);
+        assert_eq!(match_pattern("fish fish", "(fish) \\1"), true);
+        assert_eq!(match_pattern("f f", "(f) \\1"), true);
+        assert_eq!(match_pattern("dog", "(dog|cat)"), true);
+        assert_eq!(match_pattern("doggo", "(dog|cat)"), true);
+        assert_eq!(match_pattern("cat", "(dog|cat)"), true);
+        assert_eq!(match_pattern("fish", "(dog|cat|f..h)"), true);
+        assert_eq!(match_pattern("fish", "(dog|..s?\\w)"), true);
+        assert_eq!(match_pattern("cat and dog", "(cat) and \\1"), false);
+        assert_eq!(
+            match_pattern(
+                "grep 101 is doing grep 101 times",
+                "(\\w\\w\\w\\w \\d\\d\\d) is doing \\1 times"
+            ),
+            true
+        );
+    }
 }

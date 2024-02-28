@@ -74,7 +74,7 @@ pub fn parse_pattern(pattern: &str) -> Vec<Pattern> {
             match chars.next() {
                 Some(DIGIT_SYMBOL) => patterns.push(Pattern::Digit),
                 Some(ALPHANUMERIC_SYMBOL) => patterns.push(Pattern::Alphanumeric),
-                Some(c) if c.is_digit(10) => patterns.push(Pattern::Backreference(
+                Some(c) if c != '0' && c.is_digit(10) => patterns.push(Pattern::Backreference(
                     c.to_string().parse::<usize>().unwrap(),
                 )),
                 Some(c) => patterns.push(Pattern::Literal(c)),
