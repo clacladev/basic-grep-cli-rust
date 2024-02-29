@@ -20,10 +20,10 @@ fn is_matching(patterns: &[Pattern], mut chars: &mut Peekable<Chars>) -> (bool, 
             Pattern::Alphanumeric => is_matching_alphanumeric(&mut chars),
             Pattern::PositiveGroup(group) => is_matching_positive_group(group, &mut chars),
             Pattern::NegativeGroup(group) => is_matching_negative_group(group, &mut chars),
-            Pattern::StartOfString(string) => is_matching_start_of_string(string, &mut chars),
-            Pattern::EndOfString(string) => is_matching_end_of_string(string, &mut chars),
-            Pattern::ZeroOrOne(c) => is_matching_zero_or_one(c, &mut chars),
-            Pattern::OneOrMore(c) => is_matching_one_or_more(c, &mut chars),
+            Pattern::StartOfString(pattern) => is_matching_start_of_string(pattern, &mut chars),
+            Pattern::EndOfString => is_matching_end_of_string(&mut chars),
+            Pattern::ZeroOrOne(pattern) => is_matching_zero_or_one(pattern, &mut chars),
+            Pattern::OneOrMore(pattern) => is_matching_one_or_more(pattern, &mut chars),
             Pattern::Wildcard => is_matching_wildcard(&mut chars),
             Pattern::CapturingGroup(group) => is_matching_capturing_group(group, &mut chars),
             Pattern::Alternation(groups) => is_matching_alternation(groups, &mut chars),
@@ -31,6 +31,7 @@ fn is_matching(patterns: &[Pattern], mut chars: &mut Peekable<Chars>) -> (bool, 
                 is_matching_backreference(*number, &mut chars, patterns)
             }
         };
+        // TODO: if is_match is false AND it's the first pattern, then try with the next character
         if !is_match {
             return (false, initial_chars_count - chars.count());
         }
@@ -40,28 +41,22 @@ fn is_matching(patterns: &[Pattern], mut chars: &mut Peekable<Chars>) -> (bool, 
 }
 
 fn is_matching_literal(c: &char, chars: &mut Peekable<Chars>) -> bool {
-    while let Some(char) = chars.next() {
-        if *c == char {
-            return true;
-        }
+    if let Some(char) = chars.next() {
+        return *c == char;
     }
     false
 }
 
 fn is_matching_digit(chars: &mut Peekable<Chars>) -> bool {
-    while let Some(char) = chars.next() {
-        if char.is_digit(10) {
-            return true;
-        }
+    if let Some(char) = chars.next() {
+        return char.is_digit(10);
     }
     false
 }
 
 fn is_matching_alphanumeric(chars: &mut Peekable<Chars>) -> bool {
-    while let Some(char) = chars.next() {
-        if char.is_alphanumeric() || char == '_' {
-            return true;
-        }
+    if let Some(char) = chars.next() {
+        return char.is_alphanumeric() || char == '_';
     }
     false
 }
@@ -80,22 +75,19 @@ fn is_matching_negative_group(group: &String, chars: &mut Peekable<Chars>) -> bo
     false
 }
 
-fn is_matching_start_of_string(string: &String, chars: &mut Peekable<Chars>) -> bool {
-    let remaining_string: String = chars.collect();
-    let result = remaining_string.starts_with(string);
-    if result {
-        chars.nth(string.len() - 1);
+fn is_matching_start_of_string(pattern: &Pattern, chars: &mut Peekable<Chars>) -> bool {
+    let (is_match, checked_chars_count) = is_matching(&[pattern.clone()], &mut chars.clone());
+    if is_match {
+        chars.nth(checked_chars_count - 1);
     }
-    result
+    is_match
 }
 
-fn is_matching_end_of_string(string: &String, chars: &mut Peekable<Chars>) -> bool {
-    let remaining_string: String = chars.collect();
-    let result = remaining_string.ends_with(string);
-    if result {
-        chars.nth_back(string.len() - 1);
+fn is_matching_end_of_string(chars: &mut Peekable<Chars>) -> bool {
+    match chars.next() {
+        Some(_) => false,
+        None => true,
     }
-    result
 }
 
 fn is_matching_zero_or_one(pattern: &Pattern, chars: &mut Peekable<Chars>) -> bool {
@@ -103,7 +95,12 @@ fn is_matching_zero_or_one(pattern: &Pattern, chars: &mut Peekable<Chars>) -> bo
     loop {
         let (is_match, checked_chars_count) = is_matching(&[pattern.clone()], &mut chars.clone());
         if is_match {
-            chars.nth(checked_chars_count - 1);
+            match chars.peek() {
+                Some(_) => {
+                    chars.nth(checked_chars_count - 1);
+                }
+                None => {}
+            };
             count += 1;
             continue;
         }

@@ -1,5 +1,7 @@
 #[cfg(test)]
 mod tests {
+    use std::vec;
+
     use crate::matcher::pattern::{parse_pattern, Pattern};
 
     #[test]
@@ -59,15 +61,31 @@ mod tests {
     fn test_parse_pattern_with_start_of_string() {
         assert_eq!(
             parse_pattern("^h"),
-            vec![Pattern::StartOfString("h".to_string())]
+            vec![Pattern::StartOfString(Box::new(Pattern::Literal('h')))]
         );
         assert_eq!(
             parse_pattern("^abc"),
-            vec![Pattern::StartOfString("abc".to_string())]
+            vec![
+                Pattern::StartOfString(Box::new(Pattern::Literal('a'))),
+                Pattern::Literal('b'),
+                Pattern::Literal('c')
+            ]
         );
         assert_eq!(
-            parse_pattern("^hey"),
-            vec![Pattern::StartOfString("hey".to_string())]
+            parse_pattern("^(hey)"),
+            vec![Pattern::StartOfString(Box::new(Pattern::CapturingGroup(
+                vec![
+                    Pattern::Literal('h'),
+                    Pattern::Literal('e'),
+                    Pattern::Literal('y')
+                ]
+            )))]
+        );
+        assert_eq!(
+            parse_pattern("^(\\w+)"),
+            vec![Pattern::StartOfString(Box::new(Pattern::CapturingGroup(
+                vec![Pattern::OneOrMore(Box::new(Pattern::Alphanumeric))]
+            )))]
         );
     }
 
@@ -75,15 +93,23 @@ mod tests {
     fn test_parse_pattern_with_end_of_string() {
         assert_eq!(
             parse_pattern("h$"),
-            vec![Pattern::EndOfString("h".to_string())]
+            vec![Pattern::Literal('h'), Pattern::EndOfString]
         );
         assert_eq!(
             parse_pattern("abc$"),
-            vec![Pattern::EndOfString("abc".to_string())]
+            vec![
+                Pattern::Literal('a'),
+                Pattern::Literal('b'),
+                Pattern::Literal('c'),
+                Pattern::EndOfString
+            ]
         );
         assert_eq!(
-            parse_pattern("hey$"),
-            vec![Pattern::EndOfString("hey".to_string())]
+            parse_pattern("(\\w)$"),
+            vec![
+                Pattern::CapturingGroup(vec![Pattern::Alphanumeric]),
+                Pattern::EndOfString
+            ]
         );
     }
 
@@ -240,10 +266,6 @@ mod tests {
             ]
         );
         assert_eq!(
-            parse_pattern(r"^yolo"),
-            vec![Pattern::StartOfString("yolo".to_string())]
-        );
-        assert_eq!(
             parse_pattern("ab?c"),
             vec![
                 Pattern::Literal('a'),
@@ -374,6 +396,21 @@ mod tests {
                 Pattern::Literal('t'),
                 Pattern::Literal(' '),
                 Pattern::OneOrMore(Box::new(Pattern::NegativeGroup("xyz".to_string())))
+            ]
+        );
+        assert_eq!(
+            parse_pattern("^(\\w+) and \\1$"),
+            vec![
+                Pattern::StartOfString(Box::new(Pattern::CapturingGroup(vec![
+                    Pattern::OneOrMore(Box::new(Pattern::Alphanumeric))
+                ]))),
+                Pattern::Literal(' '),
+                Pattern::Literal('a'),
+                Pattern::Literal('n'),
+                Pattern::Literal('d'),
+                Pattern::Literal(' '),
+                Pattern::Backreference(1),
+                Pattern::EndOfString
             ]
         );
     }

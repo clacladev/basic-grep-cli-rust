@@ -7,8 +7,8 @@ const START_OF_STRING_SYMBOL: char = '^';
 const END_OF_STRING_SYMBOL: char = '$';
 const ZERO_OR_ONE_SYMBOL: char = '?';
 const ONE_OR_MORE_SYMBOL: char = '+';
-const GROUP_START_SYMBOL: char = '[';
-const GROUP_END_SYMBOL: char = ']';
+const POSITIVE_NEGATIVE_GROUP_START_SYMBOL: char = '[';
+const POSITIVE_NEGATIVE_GROUP_END_SYMBOL: char = ']';
 const NEGATIVE_GROUP_SYMBOL: char = '^';
 const WILDCARD_SYMBOL: char = '.';
 const CAPTURING_GROUP_START_SYMBOL: char = '(';
@@ -22,8 +22,8 @@ pub enum Pattern {
     Alphanumeric,
     PositiveGroup(String),
     NegativeGroup(String),
-    StartOfString(String),
-    EndOfString(String),
+    StartOfString(Box<Self>),
+    EndOfString,
     ZeroOrOne(Box<Self>),
     OneOrMore(Box<Self>),
     Wildcard,
@@ -32,24 +32,16 @@ pub enum Pattern {
     Backreference(usize),
 }
 
-pub fn parse_pattern(pattern: &str) -> Vec<Pattern> {
+pub fn parse_pattern(pattern_string: &str) -> Vec<Pattern> {
     let mut patterns = Vec::new();
-    let mut chars = pattern.chars().peekable();
-
-    // End of string
-    if pattern.ends_with(END_OF_STRING_SYMBOL) {
-        chars.next_back();
-        let remaining = chars.collect::<String>();
-        patterns.push(Pattern::EndOfString(remaining));
-        return patterns;
-    }
+    let mut chars = pattern_string.chars().peekable();
 
     while let Some(char) = chars.next() {
         // Groups
-        if char == GROUP_START_SYMBOL {
+        if char == POSITIVE_NEGATIVE_GROUP_START_SYMBOL {
             let mut group = String::new();
             while let Some(char) = chars.next() {
-                if char == GROUP_END_SYMBOL {
+                if char == POSITIVE_NEGATIVE_GROUP_END_SYMBOL {
                     break;
                 }
                 group.push(char);
@@ -64,8 +56,22 @@ pub fn parse_pattern(pattern: &str) -> Vec<Pattern> {
 
         // Start of string
         if char == START_OF_STRING_SYMBOL {
-            let remaining = chars.clone().collect::<String>();
-            patterns.push(Pattern::StartOfString(remaining));
+            let remaining_pattern_string = chars.clone().collect::<String>();
+            let following_patterns = parse_pattern(&remaining_pattern_string);
+            let Some(first_pattern) = following_patterns.first() else {
+                panic!("Invalid pattern");
+            };
+            patterns.push(Pattern::StartOfString(Box::new(first_pattern.clone())));
+            patterns.append(&mut following_patterns[1..].to_vec());
+            return patterns;
+        }
+
+        // End of string
+        if char == END_OF_STRING_SYMBOL {
+            patterns.push(Pattern::EndOfString);
+            if chars.next() != None {
+                panic!("End of string pattern in the wrong position");
+            }
             break;
         }
 
