@@ -1,40 +1,16 @@
-[![progress-banner](https://backend.codecrafters.io/progress/grep/15360d75-0762-4784-b58f-e2a86e6024c0)](https://app.codecrafters.io/users/codecrafters-bot?r=2qF)
+# Basic Grep CLI in Rust
 
-This is a starting point for Rust solutions to the
-["Build Your Own grep" Challenge](https://app.codecrafters.io/courses/grep/overview).
+This is a basic Grep CLI implementation in Rust. It matches the main Regex expressions. This is a small research project.
 
-[Regular expressions](https://en.wikipedia.org/wiki/Regular_expression)
-(Regexes, for short) are patterns used to match character combinations in
-strings. [`grep`](https://en.wikipedia.org/wiki/Grep) is a CLI tool for
-searching using Regexes.
+## How to run
 
-In this challenge you'll build your own implementation of `grep`. Along the way
-we'll learn about Regex syntax, how parsers/lexers work, and how regular
-expressions are evaluated.
+1. Ensure you have `cargo (1.76)` installed locally
+2. In the terminal run `echo "sentence" | ./your_grep.sh -E "regex"` where `regex` is the pattern to match
 
-**Note**: If you're viewing this repo on GitHub, head over to
-[codecrafters.io](https://codecrafters.io) to try the challenge.
+### Example
 
-# Passing the first stage
+Run `echo "grep 101" | ./your_grep.sh -E "(\w+ \d\d\d)"`. The exit code will be the result.
 
-The entry point for your `grep` implementation is in `src/main.rs`. Study and
-uncomment the relevant code, and push your changes to pass the first stage:
+## How to test
 
-```sh
-git add .
-git commit -m "pass 1st stage" # any msg
-git push origin master
-```
-
-Time to move on to the next stage!
-
-# Stage 2 & beyond
-
-Note: This section is for stages 2 and beyond.
-
-1. Ensure you have `cargo (1.62)` installed locally
-1. Run `./your_grep.sh` to run your program, which is implemented in
-   `src/main.rs`. This command compiles your Rust project, so it might be slow
-   the first time you run it. Subsequent runs will be fast.
-1. Commit your changes and run `git push origin master` to submit your solution
-   to CodeCrafters. Test output will be streamed to your terminal.
+Run `cargo test` to run the tests
