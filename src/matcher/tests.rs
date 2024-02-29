@@ -29,6 +29,7 @@ mod tests {
         assert_eq!(match_pattern("orange 2", r"orange \d"), true);
         assert_eq!(match_pattern("orange 2", r"apple \d"), false);
         assert_eq!(match_pattern("sally has 3 apples", r"\d apple"), true);
+        assert_eq!(match_pattern("sally has two apples", r"\d apple"), false);
     }
 
     #[test]
@@ -38,8 +39,8 @@ mod tests {
         assert_eq!(match_pattern("___", r"\w"), true);
         assert_eq!(match_pattern("_he110_", r"\w"), true);
         assert_eq!(match_pattern("_he110_", r"\wZ"), false);
-        assert_eq!(match_pattern("£$%a", r"\w"), false);
-        assert_eq!(match_pattern("$A", r"\w"), false);
+        assert_eq!(match_pattern("£$%a", r"\w"), true);
+        assert_eq!(match_pattern("$A", r"\w"), true);
         assert_eq!(match_pattern("xA", r"x\w"), true);
         assert_eq!(match_pattern("---", r"\w"), false);
         assert_eq!(match_pattern("é", r"\w"), true);
@@ -55,18 +56,25 @@ mod tests {
 
     #[test]
     fn test_match_pattern_positive_group() {
-        assert_eq!(match_pattern("hello world", "[abc]"), false);
-        assert_eq!(match_pattern("hello world", "[abcd]"), false);
-        assert_eq!(match_pattern("hello world", "[etz]"), false);
-        assert_eq!(match_pattern("hello world", "[abctyjh]"), true);
+        assert_eq!(match_pattern("c", "[abc]"), true);
+        assert_eq!(match_pattern("d", "[abc]"), false);
+        assert_eq!(match_pattern("ab", "[abc][abc]"), true);
+        assert_eq!(match_pattern("ad", "[abc][abc]"), false);
+        assert_eq!(match_pattern("hello", "[ytz]"), false);
+        assert_eq!(match_pattern("hello", "[abctyjh]"), true);
+        assert_eq!(match_pattern("eh", "[abctyjh]"), true);
     }
 
     #[test]
     fn test_match_pattern_negative_group() {
-        assert_eq!(match_pattern("hello world", "[^abc]"), true);
-        assert_eq!(match_pattern("hello world", "[^abcd]"), true);
-        assert_eq!(match_pattern("hello world", "[^etz]"), true);
-        assert_eq!(match_pattern("hello world", "[^abctyjh]"), false);
+        assert_eq!(match_pattern("c", "[^abc]"), false);
+        assert_eq!(match_pattern("d", "[^abc]"), true);
+        assert_eq!(match_pattern("ab", "[^abc][^abc]"), false);
+        assert_eq!(match_pattern("ad", "[^abc][^abc]"), false);
+        assert_eq!(match_pattern("xy", "[^abc][^abc]"), true);
+        assert_eq!(match_pattern("hello", "[^ytz]"), true);
+        assert_eq!(match_pattern("he", "[^abctyjh]"), true);
+        assert_eq!(match_pattern("hh", "[^abctyjh]"), false);
     }
 
     #[test]
@@ -78,6 +86,7 @@ mod tests {
         assert_eq!(match_pattern("hello world", "^Hello"), false);
         assert_eq!(match_pattern("hello world", "^world"), false);
         assert_eq!(match_pattern("log", "^log"), true);
+        assert_eq!(match_pattern("slog", "^alog"), false);
         assert_eq!(match_pattern("slog", "^log"), false);
         assert_eq!(match_pattern("log", "^(log)"), true);
         assert_eq!(match_pattern("one log", "^(log)"), false);
@@ -176,5 +185,6 @@ mod tests {
             true
         );
         assert_eq!(match_pattern("abcd is abcd", "([abcd]+) is \\1"), true);
+        // echo "$?! 101 is doing $?! 101 times" | ./your_grep.sh -E "(\w\w\w \d\d\d) is doing \1 times"
     }
 }
